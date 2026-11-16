@@ -1,0 +1,221 @@
+{
+  "scope": "Publicaggregateevidenceonly; no privateimageIDs/labels/pixels/checkpoints/cache. Frozenhistoricalrecords, no newinferenceorcheckpointselection.",
+  "rows": [
+    {
+      "model": "PARSeq Base",
+      "task": "ALPR",
+      "parameters": 23980127,
+      "input_HW": [
+        64,
+        256
+      ],
+      "exact_correct": 2415,
+      "count": 2693,
+      "macro_Levenshtein_similarity": null,
+      "current_matched_runtime": null
+    },
+    {
+      "model": "PARSeq Base",
+      "task": "price",
+      "parameters": 23980896,
+      "input_HW": [
+        64,
+        256
+      ],
+      "metrics": {
+        "n": 206,
+        "exact_correct": 148,
+        "exact_accuracy": 0.7184466019417476,
+        "CER": 0.1608548931383577,
+        "macro_normalized_Levenshtein_similarity": 0.8747457235321319,
+        "numeric_correct": 175,
+        "numeric_accuracy": 0.8495145631067961,
+        "numeric_reference_parseable": 206,
+        "numeric_metric": "Whole string decimal with optional DH; unparseable values count incorrect"
+      },
+      "backend": "TensorRT",
+      "current_matched_runtime": null
+    },
+    {
+      "model": "PARSeq Tiny",
+      "task": "price",
+      "parameters": 6092256,
+      "input_HW": [
+        64,
+        256
+      ],
+      "metrics": {
+        "n": 206,
+        "exact_correct": 118,
+        "exact_accuracy": 0.5728155339805825,
+        "CER": 0.2249718785151856,
+        "macro_normalized_Levenshtein_similarity": 0.8194059177068886,
+        "numeric_correct": 146,
+        "numeric_accuracy": 0.7087378640776699,
+        "numeric_reference_parseable": 206,
+        "numeric_metric": "Whole string decimal with optional DH; unparseable values count incorrect"
+      },
+      "backend": "NativeBF16autocast; notTensorRT",
+      "current_matched_runtime": null
+    },
+    {
+      "model": "Custom Fast Tiny",
+      "task": "ALPR mixed timing subset ONLY",
+      "parameters": 6048863,
+      "input_HW": [
+        48,
+        192
+      ],
+      "exact_correct": 203,
+      "count": 256,
+      "macro_Levenshtein_similarity": 0.9650065104166672,
+      "full2693_qualification_claim": false,
+      "timing": {
+        "predecoded": {
+          "n": 256,
+          "warmups": 5,
+          "repeats": 3,
+          "batch_size": 1,
+          "profile_max_batch": 32,
+          "mean_ms": 0.6862260218743662,
+          "median_ms": 0.5932704953011125,
+          "p95_ms": 0.9510365227470173,
+          "engine_sha256": "b6291bd70dd316a569aff20474cd902bb1bdc7182f62f886dc3918c6d22433d7",
+          "runtime_sha256": "7cc4a4a1cd0252ce47f27bc989596d4961bb674a5576611eb63b6f46448f5a47",
+          "manifest_sha256": "c53efe6b5490b4fbbb6919a4ce74bc1d5e331037b757eaf0cfa5bb82890018c8",
+          "GPU_peak_bytes": 715128832
+        },
+        "encoded": {
+          "n": 256,
+          "warmups": 5,
+          "repeats": 3,
+          "batch_size": 1,
+          "profile_max_batch": 32,
+          "mean_ms": 1.6581764586286833,
+          "median_ms": 0.8750359993427992,
+          "p95_ms": 3.799026989145204,
+          "engine_sha256": "b6291bd70dd316a569aff20474cd902bb1bdc7182f62f886dc3918c6d22433d7",
+          "runtime_sha256": "7cc4a4a1cd0252ce47f27bc989596d4961bb674a5576611eb63b6f46448f5a47",
+          "manifest_sha256": "c53efe6b5490b4fbbb6919a4ce74bc1d5e331037b757eaf0cfa5bb82890018c8",
+          "GPU_peak_bytes": 715128832
+        }
+      },
+      "host_RSS_peak_bytes_separate_probe": 558882816
+    },
+    {
+      "model": "Custom Fast Tiny",
+      "task": "price",
+      "parameters": 6049248,
+      "input_HW": [
+        48,
+        192
+      ],
+      "metrics": {
+        "n": 206,
+        "exact_correct": 112,
+        "exact_accuracy": 0.5436893203883495,
+        "CER": 0.23284589426321708,
+        "macro_normalized_Levenshtein_similarity": 0.8114636307597476,
+        "numeric_correct": 135,
+        "numeric_accuracy": 0.6553398058252428,
+        "numeric_reference_parseable": 206,
+        "numeric_metric": "Whole string decimal with optional DH; unparseable values count incorrect"
+      },
+      "backend": "TensorRT",
+      "timing": {
+        "predecoded": {
+          "n": 206,
+          "warmups": 5,
+          "repeats": 3,
+          "batch_size": 1,
+          "profile_max_batch": 32,
+          "mean_ms": 0.8890187154180433,
+          "median_ms": 0.8848559809848666,
+          "p95_ms": 0.9218786493875086,
+          "engine_sha256": "20a1b6c157fa69366a827a4dfe6ec57bd50c7bd865ed0ffe761e921cb7b1220a",
+          "runtime_sha256": "7cc4a4a1cd0252ce47f27bc989596d4961bb674a5576611eb63b6f46448f5a47",
+          "manifest_sha256": "239dcd31450e1e0ff4701ba261b4a8a75765cf776794b2a0374e6ce894f830b5",
+          "GPU_peak_bytes": 721420288
+        },
+        "encoded": {
+          "n": 206,
+          "warmups": 5,
+          "repeats": 3,
+          "batch_size": 1,
+          "profile_max_batch": 32,
+          "mean_ms": 1.0945887837376638,
+          "median_ms": 1.0867929668165743,
+          "p95_ms": 1.1384454584913328,
+          "engine_sha256": "20a1b6c157fa69366a827a4dfe6ec57bd50c7bd865ed0ffe761e921cb7b1220a",
+          "runtime_sha256": "7cc4a4a1cd0252ce47f27bc989596d4961bb674a5576611eb63b6f46448f5a47",
+          "manifest_sha256": "239dcd31450e1e0ff4701ba261b4a8a75765cf776794b2a0374e6ce894f830b5",
+          "GPU_peak_bytes": 721420288
+        }
+      },
+      "host_RSS_peak_bytes_separate_probe": 525877248
+    }
+  ],
+  "rotation": {
+    "parseq-trt": {
+      "count": 788,
+      "correct_by_saved_angle": {
+        "0": 598,
+        "90": 31,
+        "180": 152,
+        "270": 226
+      },
+      "scope": "Historicalrawreaderoutputs,noorientationwrapper; checkpoints/runtimeversionsnotcurrentqualification"
+    },
+    "fast-tiny": {
+      "count": 788,
+      "correct_by_saved_angle": {
+        "0": 579,
+        "90": 6,
+        "180": 0,
+        "270": 182
+      },
+      "scope": "Historicalrawreaderoutputs,noorientationwrapper; checkpoints/runtimeversionsnotcurrentqualification"
+    }
+  },
+  "fewshot_clutter": {
+    "model": "Florence",
+    "type": "Userqualitativeobservation",
+    "approx_support": 50,
+    "matched_accuracy": null,
+    "claim": "Notameasured90%guaranteeorPARSeqcapability"
+  },
+  "two_line_isolated_accuracy": null,
+  "arbitrary_size_accuracy": null,
+  "all_scripts_Unicode": false,
+  "train_supervision": "Image+expectedtextonly; no boundingboxannotationsneeded",
+  "metric_policy": {
+    "ALPR": "Uppercase/removewhitespace; wholepredictionexact",
+    "price": "Outerstriponlywholetext; separatewhole-valuedecimaloptionalDHnumeric; no substrings",
+    "Lev": "Mean1-LevenshteinDistance/max(1,len(GT),len(pred)); similaritynotexactaccuracy",
+    "reviewed144": "AIreviewedsubsetof206, nothuman-certified/notinternal144DEV"
+  },
+  "timing_policy": "RTX5090freshPIDB1,5warmups3passes; RGBstartswithdecodedPIL,encodedincludeslocalfile/JPEGdecode; no detector/network/load. HostRSSfromseparateprobeincludeslibraries/buffers,notminimumRAM.",
+  "legacy_scope_resolution": "Olderreference_metrics maycarryFastTinyfull-cohortnumbers; thisnewsummarydoesnotqualify/repeatthoseclaims. VerifiedFastplatecountattachedtomatchedruntimeis203/256only; do not presentasfull2693score.",
+  "workflow_validation": {
+    "legacy": "Existingreleasedcode/notebookpipelinehadpriorGPU/ORT/TRTchecks; seevalidation_summary forhistoricalscope",
+    "current_refresh": "6CPUdata/config/notebookASTtests only; nofreshBase/Tiny/Fasttraining/exportGPUmatrix claimed"
+  },
+  "evidence_sha256": {
+    "public_reference_metrics": "569fc0fcad8ec0a9284cb307d8979d1371a69f67412aa6d4236802c5c3f7e70e",
+    "harmonized_price206_aggregate": "018d3be97423981f82863e9c897f0f54aae67889f60ed61e4c8cefc80fc886ab",
+    "historical_rotation_aggregate": "b48b3adecb97eae3d38e39de91a974ccf2e9907e966571a04e44dd09fd630481",
+    "fast_plate_subset_summary": "7aac4ae094fa41a6ad41d372ac8a9d5b865a3a5502eb1ca5c5f40dffbd8811bf",
+    "fast_plate_saved_predictions_PRIVATE_NOT_DISTRIBUTED": "a444669c12941efb602641a9ea0250ba39449fb1775d5df4430ae39069b233a6",
+    "upstream_source_pin": "a0191c73862d3c9c7981e399e6fa5f90795343207c18ccdede195107d81c749c",
+    "fast_plate_predecoded": "26fa068570af760473e92df582eda82989338d5fbb1ea0c4630e204ea2c508ef",
+    "fast_plate_encoded": "5f05b992692f2fd50f6fd4a0cd69b51da993b97760bcd8b6962976b31c83888b",
+    "fast_price_predecoded": "71a18dc08b6cfa28cd890fae33241b93e0dbb6654d92c2984367f71027a17966",
+    "fast_price_encoded": "e1844ceb30cf2f756320e0600aa4d40f6ed75fc24f2638a5c24dde3070024469"
+  },
+  "related_repositories": {
+    "PARSeq": "https://github.com/algofly-oss/parseq-ocr-training",
+    "WATERec": "https://github.com/algofly-oss/waterec-ocr-training",
+    "Florence": "https://github.com/algofly-oss/vllm-ocr-training",
+    "CCT-S": "https://github.com/algofly-oss/license-plate-ocr-training"
+  }
+}

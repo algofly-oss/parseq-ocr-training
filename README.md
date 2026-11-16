@@ -2,7 +2,23 @@
 
 A standalone, notebook-first workflow for **PARSeq Base, PARSeq Tiny and the custom Fast Tiny recipe**: image/TXT data → training → PyTorch inference → ONNX → TensorRT. The numbered workflow follows [vllm-ocr-training](https://github.com/algofly-oss/vllm-ocr-training). No other checkout is needed to use these PARSeq workflows.
 
-**WATERec is a separate model family and a separate standalone repository.** Use the sibling [`waterec-ocr-training`](../waterec-ocr-training/README.md) checkout for WATERec R/RS and its optional speculative decoder. Fast Tiny is PARSeq-derived; it is not a WATERec preset. Existing legacy WATE/PP entrypoints and notebooks 8/9 remain for compatibility, while notebooks **0–7 are the main PARSeq workflow**.
+**WATERec is a separate model family and a separate standalone repository.** Use the sibling [`waterec-ocr-training`](https://github.com/algofly-oss/waterec-ocr-training) checkout for WATERec R/RS and its optional speculative decoder. Fast Tiny is PARSeq-derived; it is not a WATERec preset. Existing legacy WATE/PP entrypoints and notebooks 8/9 remain for compatibility, while notebooks **0–7 are the main PARSeq workflow**.
+
+## Measured reference points first
+
+This is also a record of experiments, benchmarks and failures—not just a training product. See [experiment methods/results](docs/experiments.md), the [scenario capability matrix](docs/capabilities.md) and [aggregate evidence metadata](results/scenario_evidence.json). Separate trained checkpoints and cohorts are explicit; dummy-data execution is not accuracy evidence.
+
+| PARSeq reference | Params / H×W | Exact / cohort; mean Lev. | RGB / encoded mean ms | GPU / host peak MiB |
+|---|---|---|---:|---:|
+| Base, ALPR | 23.980M /64×256 | 2,415/2,693; Lev NM | NM /NM | NM /NM |
+| Fast Tiny, ALPR | 6.049M /48×192 | **203/256 timing subset**;96.50% | 0.686226 /1.658176 | 682 /533 |
+| Base, price | 23.981M /64×256 | 148/206;87.47% | NM /NM | NM /NM |
+| Tiny, price (native BF16) | 6.092M /64×256 | 118/206;81.94% | NM /NM | NM /NM |
+| Fast Tiny, price | 6.049M /48×192 | 112/206;81.15% | 0.889019 /1.094589 | 688 /502 |
+
+NM means unmeasured in the current matched runtime reference. Fast Tiny's verified plate timing accuracy is **203/256, not a full2,693-image result**. Lev is normalized edit similarity, not exact accuracy. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. See the linked methods before comparing rows or old snapshots.
+
+The price comparison exposes a limitation: Fast Tiny is fast but has only112/206 exact and88/144 reviewed numeric, versus Florence148/206 and133/144. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/vllm-ocr-training), [CCT-S](https://github.com/algofly-oss/license-plate-ocr-training).
 
 | Option | Starting representation | Decode / training |
 | --- | --- | --- |
@@ -260,7 +276,7 @@ These are task-specific trained checkpoints: a family may use different plate an
 | PP medium (separate plate/price models) | 2310/2693 (85.78%) | 571/984 (58.03%) | 161/206 (78.16%) | 187/206 (90.78%) | 131/144 (90.97%) |
 | PARSeq Base 64×256 | 2415/2693 (89.68%) | 747/984 (75.91%) | 148/206 (71.84%) | 175/206 (84.95%) | 125/144 (86.81%) |
 | PARSeq Tiny 64×256 | Not measured | Not measured | 118/206 (57.28%) | 146/206 (70.87%) | 98/144 (68.06%) |
-| Fast Tiny 48×192 | 2378/2693 (88.30%) | 715/984 (72.66%) | 112/206 (54.37%) | 135/206 (65.53%) | 88/144 (61.11%) |
+| Fast Tiny 48×192 | Not qualified here;203/256 timing subset | Not qualified here | 112/206 (54.37%) | 135/206 (65.53%) | 88/144 (61.11%) |
 | CCT-S notebook model | 2315/2693 (85.96%) | 644/984 (65.45%) | 100/206 (48.54%) | 123/206 (59.71%) | 78/144 (54.17%) |
 | TrOCR-small (separate task models) | 2350/2693 (87.26%) | 274/984 (27.85%) | 115/206 (55.83%) | 137/206 (66.50%) | 86/144 (59.72%) |
 
