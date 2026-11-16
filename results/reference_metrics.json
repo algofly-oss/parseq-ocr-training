@@ -1,0 +1,642 @@
+{
+  "scope": "Reference measurements on a private dataset; no images, labels, or private weights are distributed",
+  "gpu": "NVIDIA RTX 5090",
+  "train_images": 10990,
+  "validation_images": 2693,
+  "external_images": 443,
+  "external_source": "https://github.com/openalpr/benchmarks",
+  "external_regions": [
+    "Brazil",
+    "Europe",
+    "US"
+  ],
+  "florence": {
+    "best_pytorch_exact": 0.883401411065726,
+    "tensorrt_exact": 0.8804307463795024,
+    "batch1_median_ms": 9.11665748571977,
+    "batch1_process_vram_bytes": 1629487104,
+    "batch32_crops_s": 375.94627236003623,
+    "external_beam5_exact": 0.4288939051918736
+  },
+  "parseq": {
+    "parameters": 23980127,
+    "image_size": [
+      64,
+      256
+    ],
+    "best_pytorch_exact": 0.8975120683252877,
+    "tensorrt_exact": 0.8967694021537319,
+    "batch1_median_ms": 3.9974370156414807,
+    "batch1_process_vram_bytes": 958398464,
+    "batch32_crops_s": 940.58,
+    "external_tensorrt_exact": 0.7381489841986456
+  },
+  "limits": [
+    "Crop OCR only; no full-frame detector/tracking benchmark",
+    "Unknown pretraining exposure to public external images",
+    "Engine targets and actual input data affect results"
+  ],
+  "legacy_reference_note": "Top-level Florence/PARSeq and443-image public benchmark measurements predate the following984-image reviewed benchmark; do not mix their cohorts.",
+  "reviewed_task_specific_reference": {
+    "hardware": "RTX5090",
+    "limits": [
+      "Private datasets and trained weights not included",
+      "AI-reviewed values are not human-certified",
+      "Benchmarks reused for engineering comparisons; not a fresh blind final test",
+      "Strict1ms encoded-input latency target remains unmet for WATERec",
+      "Crop recognition only; detection and network excluded"
+    ],
+    "alpr": {
+      "validation_n": 2693,
+      "unseen_n": 984,
+      "waterec512_tensorrt": {
+        "validation_correct": 2475,
+        "unseen_correct": 880,
+        "parameters": 26120544,
+        "default_cached_mean_encoded_ms": 2.708594707883094,
+        "default_cached_mean_predecoded_ms": 1.642733589733325,
+        "gpu_MiB": 688,
+        "timing_source": "Public runtime, same 256 mixed crops, 5 warmups, fresh isolated RTX5090 processes; CPU default versus exact GPU preprocessing opt-in",
+        "orientation_encoded_mean_ms": 2.824956210588425,
+        "orientation_predecoded_mean_ms": 1.8052650839308626,
+        "gpu_preprocessing_optin": {
+          "default_enabled": false,
+          "encoded_mean_ms": 2.2727062691956235,
+          "predecoded_mean_ms": 1.2608475476554304,
+          "gpu_MiB": 694,
+          "orientation_encoded_mean_ms": 2.4611386895685428,
+          "orientation_predecoded_mean_ms": 1.4107311856150773,
+          "plate_predictions_unchanged": 4120,
+          "orientation_predictions_angles_unchanged": 4136,
+          "queued_lifecycle_cases": 80,
+          "compiler_requirements": "Linux C compiler (CC or cc) and nvcc; compiled from source into a local cache; no binaries bundled",
+          "file_decode": "Retained on CPU",
+          "inference_backend": "Public one-step cached greedy TensorRT"
+        }
+      },
+      "florence_optimized": {
+        "validation_correct": 2381,
+        "unseen_correct": 857
+      }
+    },
+    "price": {
+      "validation_n": 206,
+      "ai_reviewed_n": 144,
+      "ppocr_tensorrt": {
+        "exact_correct": 161,
+        "numeric_correct": 187,
+        "ai_reviewed_numeric_correct": 131,
+        "public_runtime_encoded_mean_ms": 1.326,
+        "gpu_MiB": 670
+      },
+      "waterec_native": {
+        "exact_correct": 149,
+        "numeric_correct": 176,
+        "ai_reviewed_numeric_correct": 129
+      },
+      "florence_ai_reviewed_numeric_correct": 133
+    }
+  },
+  "current_international_443": {
+    "n": 443,
+    "scope": "Separate Latin-alphabet public cohort; frozen models, no fitting or model selection; original pretraining exposure unknown",
+    "exact_RGB_overlap_training": 0,
+    "exact_RGB_overlap_primary984": 0,
+    "models": {
+      "legacy_external_parseq_trained": {
+        "all": {
+          "n": 443,
+          "correct": 327,
+          "accuracy": 0.7381489841986456
+        },
+        "br": {
+          "n": 113,
+          "correct": 82,
+          "accuracy": 0.7256637168141593
+        },
+        "eu": {
+          "n": 108,
+          "correct": 81,
+          "accuracy": 0.75
+        },
+        "us": {
+          "n": 222,
+          "correct": 164,
+          "accuracy": 0.7387387387387387
+        }
+      },
+      "final512_public_TRT_orientation_off": {
+        "all": {
+          "n": 443,
+          "correct": 332,
+          "accuracy": 0.7494356659142212
+        },
+        "br": {
+          "n": 113,
+          "correct": 99,
+          "accuracy": 0.8761061946902655
+        },
+        "eu": {
+          "n": 108,
+          "correct": 82,
+          "accuracy": 0.7592592592592593
+        },
+        "us": {
+          "n": 222,
+          "correct": 151,
+          "accuracy": 0.6801801801801802
+        }
+      },
+      "current_Florence_fullvocab_sharedTRT_beam5": {
+        "all": {
+          "n": 443,
+          "correct": 191,
+          "accuracy": 0.43115124153498874
+        },
+        "br": {
+          "n": 113,
+          "correct": 73,
+          "accuracy": 0.6460176991150443
+        },
+        "eu": {
+          "n": 108,
+          "correct": 37,
+          "accuracy": 0.3425925925925926
+        },
+        "us": {
+          "n": 222,
+          "correct": 81,
+          "accuracy": 0.36486486486486486
+        }
+      }
+    }
+  },
+  "reviewed_family_comparison": {
+    "ALPR_validation_n": 2693,
+    "reviewed_unseen_n": 984,
+    "price_validation_n": 206,
+    "price_AI_reviewed_n": 144,
+    "AI_reference_note": "Frozen AI-reviewed numeric subset of those 206 images; not human-certified and not the 144-image internal training holdout",
+    "task_checkpoint_note": "Task-specific checkpoints per dataset; one family is not necessarily one joint model. Null means unmeasured, not zero.",
+    "rows": [
+      {
+        "family": "Florence-2 optimized",
+        "alpr_validation_correct": 2381,
+        "reviewed_unseen_correct": 857,
+        "price_exact_correct": 148,
+        "price_numeric_correct": 176,
+        "price_AI_reviewed_numeric_correct": 133,
+        "backend_note": "Full-vocabulary shared TensorRT beam5",
+        "limitations": ""
+      },
+      {
+        "family": "WATERec final512",
+        "alpr_validation_correct": 2475,
+        "reviewed_unseen_correct": 880,
+        "price_exact_correct": 149,
+        "price_numeric_correct": 176,
+        "price_AI_reviewed_numeric_correct": 129,
+        "backend_note": "Actual TensorRT for both tasks, separate512-patch checkpoints: plate RS, price R; price static batch1 original autoregressive reader.",
+        "limitations": "Price TensorRT matches206/206 native strings and prepared arrays. Speculative ALPR is separately labeled and is not this default."
+      },
+      {
+        "family": "PP-OCRv6-derived medium",
+        "alpr_validation_correct": 2310,
+        "reviewed_unseen_correct": 571,
+        "price_exact_correct": 161,
+        "price_numeric_correct": 187,
+        "price_AI_reviewed_numeric_correct": 131,
+        "backend_note": "Separate task-specific TensorRT checkpoints",
+        "limitations": ""
+      },
+      {
+        "family": "PARSeq Base64x256",
+        "alpr_validation_correct": 2415,
+        "reviewed_unseen_correct": 747,
+        "price_exact_correct": 148,
+        "price_numeric_correct": 175,
+        "price_AI_reviewed_numeric_correct": 125,
+        "backend_note": "TensorRT; separate task-specific checkpoints",
+        "limitations": "Older price timing exists but is not the current matched benchmark run."
+      },
+      {
+        "family": "PARSeq Tiny64x256",
+        "alpr_validation_correct": null,
+        "reviewed_unseen_correct": null,
+        "price_exact_correct": 118,
+        "price_numeric_correct": 146,
+        "price_AI_reviewed_numeric_correct": 98,
+        "backend_note": "Price: native BF16-autocast",
+        "limitations": "No full2693/984 standard autoregressive Tiny evaluation located; do not substitute Fast Tiny or Tiny-parallel control."
+      },
+      {
+        "family": "Fast Tiny48x192",
+        "alpr_validation_correct": 2378,
+        "reviewed_unseen_correct": 715,
+        "price_exact_correct": 112,
+        "price_numeric_correct": 135,
+        "price_AI_reviewed_numeric_correct": 88,
+        "backend_note": "TensorRT; separate task-specific checkpoints",
+        "limitations": ""
+      },
+      {
+        "family": "CCT-S notebook model",
+        "alpr_validation_correct": 2315,
+        "reviewed_unseen_correct": 644,
+        "price_exact_correct": 100,
+        "price_numeric_correct": 123,
+        "price_AI_reviewed_numeric_correct": 78,
+        "backend_note": "Plate original TensorRT; price separately trained39-symbol head with actual staticB1 TensorRT/CUDAgraph.",
+        "limitations": "Separate task checkpoints and decoders; price is not the plate engine. StaticB1 price timing does not establish B32 throughput."
+      },
+      {
+        "family": "TrOCR-small",
+        "alpr_validation_correct": 2350,
+        "reviewed_unseen_correct": 274,
+        "price_exact_correct": 115,
+        "price_numeric_correct": 137,
+        "price_AI_reviewed_numeric_correct": 86,
+        "backend_note": "Different task-specific trials: plate character decoder384, price original BPE decoder384",
+        "limitations": ""
+      }
+    ],
+    "runtime_scope_note": "RTX5090 fresh-process batch1 means; encoded file-to-text and predecoded RGB-to-text separated; memory is driver-accounted process MiB, not weight size. WATE/CCT/Fast plates use matched256 mixed plate/unseen images; price timings use206 price crops, five warmups; Fast measurements use3 repeats. Base/standardTiny/TrOCR current matched timing remains unavailable. CCT price is a distinct39-symbol TensorRT head, not its plate model.",
+    "runtime_rows": [
+      {
+        "model_task": "Florence optimized plates",
+        "encoded_mean_ms": 7.339,
+        "predecoded_mean_ms": null,
+        "process_GPU_MiB": 1130
+      },
+      {
+        "model_task": "Florence optimized prices",
+        "encoded_mean_ms": 7.796,
+        "predecoded_mean_ms": null,
+        "process_GPU_MiB": 1176
+      },
+      {
+        "model_task": "WATERec plates CPU preprocessing default",
+        "encoded_mean_ms": 2.709,
+        "predecoded_mean_ms": 1.643,
+        "process_GPU_MiB": 688
+      },
+      {
+        "model_task": "WATERec plates GPU preprocessing opt-in",
+        "encoded_mean_ms": 2.273,
+        "predecoded_mean_ms": 1.261,
+        "process_GPU_MiB": 694
+      },
+      {
+        "model_task": "WATERec prices static batch1 TensorRT",
+        "encoded_mean_ms": 1.069492,
+        "predecoded_mean_ms": 0.822072,
+        "process_GPU_MiB": 688,
+        "n": 206,
+        "warmups": 5
+      },
+      {
+        "model_task": "PP medium prices",
+        "encoded_mean_ms": 1.326,
+        "predecoded_mean_ms": 1.125,
+        "process_GPU_MiB": 670
+      },
+      {
+        "model_task": "Fast Tiny plates",
+        "encoded_mean_ms": 1.658176,
+        "predecoded_mean_ms": 0.686226,
+        "process_GPU_MiB": 682
+      },
+      {
+        "model_task": "Fast Tiny prices",
+        "encoded_mean_ms": 1.094589,
+        "predecoded_mean_ms": 0.889019,
+        "process_GPU_MiB": 688
+      },
+      {
+        "model_task": "CCT-S plates original notebook TensorRT",
+        "encoded_mean_ms": 1.541719,
+        "predecoded_mean_ms": 0.454982,
+        "process_GPU_MiB": 742,
+        "n": 256,
+        "warmups": 5,
+        "engine_unchanged": true
+      },
+      {
+        "model_task": "CCT-S prices separate39-symbol TensorRT head",
+        "encoded_mean_ms": 0.783216,
+        "predecoded_mean_ms": 0.555283,
+        "process_GPU_MiB": 540,
+        "n": 206,
+        "warmups": 5,
+        "static_batch": 1
+      },
+      {
+        "model_task": "WATERec plates experimental speculative",
+        "encoded_mean_ms": 1.964577719263616,
+        "predecoded_mean_ms": 0.9770046168190069,
+        "process_GPU_MiB": 698,
+        "n": 256,
+        "warmups": 5,
+        "repeats": 3,
+        "experimental_opt_in": true
+      },
+      {
+        "model_task": "WATERec plates speculative plus orientation",
+        "encoded_mean_ms": 2.1147450820535596,
+        "predecoded_mean_ms": 1.080552612165775,
+        "process_GPU_MiB": 698,
+        "n": 256,
+        "warmups": 5,
+        "repeats": 3,
+        "experimental_opt_in": true
+      }
+    ],
+    "CCT_plate_runtime_verification": {
+      "n": 256,
+      "warmups": 5,
+      "fresh_processes": true,
+      "torch_imported": false,
+      "encoded_and_predecoded_predictions_identical": true,
+      "historical_reference_predictions_identical": true,
+      "engine_unchanged": true,
+      "engine_sha256": "d9028f0b8846a60b9d471124b961d8019a3fec578a2381fff93150bf7aa94a8b"
+    },
+    "WATERec_price_TensorRT_verification": {
+      "n": 206,
+      "native_strings_identical": 206,
+      "prepared_patch_arrays_identical": 206,
+      "exact_correct": 149,
+      "numeric_correct": 176,
+      "AI_reviewed_numeric_correct": 129,
+      "AI_reviewed_n": 144,
+      "checkpoint_sha256": "2f8b226fbde6f0cad87cb4f0e3acc3ee271e7ebca47a0bc1119286c2eb43ed4b",
+      "variant": "R",
+      "patch_tokens": 512,
+      "batch": 1,
+      "static_batch_only_measured": true,
+      "decoder": "Original autoregressive reader; not speculative ALPR",
+      "encoded_mean_ms": 1.069492,
+      "predecoded_mean_ms": 0.822072,
+      "process_GPU_MiB": 688
+    },
+    "CCT_price_TensorRT_verification": {
+      "n": 206,
+      "native_strings_identical": 206,
+      "exact_correct": 100,
+      "numeric_correct": 123,
+      "AI_reviewed_numeric_correct": 78,
+      "AI_reviewed_n": 144,
+      "static_batch": 1,
+      "cuda_graph": true,
+      "predecoded_mean_ms": 0.555283,
+      "encoded_mean_ms": 0.783216,
+      "process_GPU_MiB": 540
+    }
+  },
+  "experimental_speculative_ALPR": {
+    "status": "Final-refit experiment with validated optional public implementation; original AR default unchanged",
+    "alpr_validation_n": 2693,
+    "alpr_validation_correct": 2476,
+    "reviewed_unseen_n": 984,
+    "reviewed_unseen_correct": 879,
+    "international_n": 443,
+    "international_correct": 332,
+    "native_FP32_primary_strings_identical": 3677,
+    "native_FP32_primary_n": 3677,
+    "cached_FP16_strings_identical": 4118,
+    "cached_FP16_n": 4120,
+    "encoded_mean_ms": 1.964577719263616,
+    "predecoded_mean_ms": 0.9770046168190069,
+    "predecoded_p95_ms": 1.4598274981835855,
+    "process_GPU_MiB": 698,
+    "n": 256,
+    "warmups": 5,
+    "fresh_processes": true,
+    "included": "Exact GPU preprocessing, original encoder, draft, causal verifier, prefix commit/cache handoff, all required original cached-decoder fallback and text decoding; file decoding only encoded scope",
+    "rotation_validated": true,
+    "strict_1ms_p95_and_700MiB_targets_met": false,
+    "public_default_changed": false,
+    "claim_limit": "Empirical comparison only, not universal/lossless mathematical equivalence",
+    "research_shared_workspace": {
+      "status": "Private research measurement; public runtime integration validation separate",
+      "all4120_strings_unchanged": true,
+      "refcount_cleanup_passed": true,
+      "encoded_mean_ms": 1.9627902357418254,
+      "predecoded_mean_ms": 0.9501088836714189,
+      "predecoded_p95_ms": 1.2509135180152953,
+      "process_GPU_MiB": 700,
+      "n": 256,
+      "warmups": 5
+    },
+    "public_integration": {
+      "status": "Validated experimental opt-in; original AR default unchanged",
+      "primary_n": 4120,
+      "private_speculative_strings_identical": 4120,
+      "native_FP32_primary_strings_identical": 3677,
+      "cached_FP16_strings_identical": 4118,
+      "rotation_n": 4136,
+      "rotation_native_predictions_and_angles_identical": 4136,
+      "rotation_cached_AR_strings_identical": 4131,
+      "rotation_correct_788_by_clockwise_angle": [
+        703,
+        705,
+        705,
+        706
+      ],
+      "upright984_with_orientation_correct": 878,
+      "shared_workspace_capacity_bytes": 3997696,
+      "shared_workspace_cleanup_passed": true,
+      "source_sha256": {
+        "waterec_speculative.py": "2fceadf008de20f7448ee722684a0963fa5f8fc2483102ca6150026ad7752e92",
+        "waterec_speculative_export.py": "96283123f9a76cefa267cda5046e877412a2b9e0e7419da7837422160571ecef",
+        "waterec_speculative_training.py": "a8b64ad86fdc354b4b1bba4cae71ed14a91593e4e5b0de26a743b2e03b2bc60b",
+        "waterec_runtime.py": "0bc91f0f7d7c882c9770c0fc55b14b9529013aaf0fd3815a44b4cc5696f834fa",
+        "waterec_workspace.py": "c5ffbd3ccbaba0fb94d96c15499bcf73edd2abf71784feafd53f681660a84d1a",
+        "waterec_gpu_preprocessing.py": "814bb4eeb0b7f608493330e99dc5cec41d1cef4e37c964533f692828d21bf6ca",
+        "waterec_orientation.py": "a435aadb9809743f21ef2a2c362d75af7931c6c53817ccbcb76807fcc4988129",
+        "waterec_cli.py": "4934365603d21976c4e9c742f220a60e1737e05796e358d7dd999f2af0831144",
+        "waterec_benchmark.py": "c462c4efd9da5a57148916de079cc4574c3bddc4731a3de3e6623f0cf8556e08"
+      },
+      "target_checkpoint_sha256": "dd496b04dcea6c4ccf972d24925ec89f040522e236052e5d9be8410ea4cf3c81",
+      "timings": {
+        "baseline": {
+          "encoded": {
+            "n": 256,
+            "warmups": 5,
+            "repeats": 3,
+            "mean_ms": 1.964577719263616,
+            "p95_ms": 4.155844013439491,
+            "process_gpu_peak_bytes": 731906048,
+            "timing_valid_isolated": true
+          },
+          "predecoded": {
+            "n": 256,
+            "warmups": 5,
+            "repeats": 3,
+            "mean_ms": 0.9770046168190069,
+            "p95_ms": 1.4598274981835855,
+            "process_gpu_peak_bytes": 731906048,
+            "timing_valid_isolated": true
+          }
+        },
+        "orientation": {
+          "encoded": {
+            "n": 256,
+            "warmups": 5,
+            "repeats": 3,
+            "mean_ms": 2.1147450820535596,
+            "p95_ms": 4.41511346725747,
+            "process_gpu_peak_bytes": 731906048,
+            "timing_valid_isolated": true
+          },
+          "predecoded": {
+            "n": 256,
+            "warmups": 5,
+            "repeats": 3,
+            "mean_ms": 1.080552612165775,
+            "p95_ms": 1.519275514874607,
+            "process_gpu_peak_bytes": 731906048,
+            "timing_valid_isolated": true
+          }
+        }
+      },
+      "lifecycle": "Tracked/untracked external CUDA contexts, both close orders, partial-allocation failure/retry and stale handles validated",
+      "host_memory_probe_is_separate": true
+    },
+    "earlier_research_control": {
+      "encoded_mean_ms": 2.042499883070074,
+      "predecoded_mean_ms": 0.9697946560815277,
+      "predecoded_p95_ms": 1.3626361382193861,
+      "process_GPU_MiB": 704,
+      "rotation_validated": false
+    }
+  },
+  "speculative_training_workflow": {
+    "prototype_profile": "plate/512patches/25characters/95classes",
+    "selection": "Fit-only target10epoch maximum held teacher-verified prefix, earliest tie",
+    "full_refit": "Fresh corresponding full-data target, fixed selected epoch and original10epoch LR prefix",
+    "GT_character_supervision": false,
+    "original_target_updated": false,
+    "target_SHA_binding": true,
+    "legacy_teacher_provenance": "Unverified unless public content fingerprint/split match",
+    "CPU_selection_and_full_refit_smoke": true,
+    "CPU_fixed_disk_cache_smoke": true,
+    "CUDA_BF16_fixed_smoke": true,
+    "inference_default_changed": false
+  },
+  "WATERec_price_R1024_research_reference": {
+    "task": "price",
+    "patch_tokens": 1024,
+    "trained_at_matching_resolution": true,
+    "exact_correct": 154,
+    "numeric_correct": 181,
+    "n": 206,
+    "AI_reviewed_numeric_correct": 131,
+    "AI_reviewed_n": 144,
+    "native_strings_identical": 206,
+    "prepared_arrays_identical": 206,
+    "backend": "Actual private TensorRT, exact GPU preprocessing and shared scratch",
+    "encoded_mean_ms": 1.3396713010888415,
+    "predecoded_mean_ms": 1.0897883041317251,
+    "process_GPU_MiB": 700,
+    "warmups": 5,
+    "repeats": 3,
+    "static_batch": 1,
+    "public_export_profile_enabled": false,
+    "default_changed": false
+  },
+  "current_host_memory": {
+    "scope": "Separate fresh-PID encoded-input batch1 functional probes, five warmups then full cohort; Linux recorded high-water RSS includes libraries/host buffers/metadata/transient images. No full-RGB preload and no latency claim.",
+    "script_sha256": "a63a7ddc0ce848bbb9182ff067e5c2423fc2ee9a2d9486279d1369372d320078",
+    "rows": [
+      {
+        "model_task": "CCT-S plates",
+        "n": 256,
+        "predictions_reference_identical": 256,
+        "recorded_peak_host_RSS_bytes": 522928128,
+        "recorded_peak_host_RSS_MiB": 498.703125,
+        "timing_valid": false
+      },
+      {
+        "model_task": "CCT-S prices",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 487403520,
+        "recorded_peak_host_RSS_MiB": 464.82421875,
+        "timing_valid": false
+      },
+      {
+        "model_task": "Fast Tiny plates",
+        "n": 256,
+        "predictions_reference_identical": 256,
+        "recorded_peak_host_RSS_bytes": 558882816,
+        "recorded_peak_host_RSS_MiB": 532.9921875,
+        "timing_valid": false
+      },
+      {
+        "model_task": "Fast Tiny prices",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 525877248,
+        "recorded_peak_host_RSS_MiB": 501.515625,
+        "timing_valid": false
+      },
+      {
+        "model_task": "PP prices",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 541728768,
+        "recorded_peak_host_RSS_MiB": 516.6328125,
+        "timing_valid": false
+      },
+      {
+        "model_task": "WATERec AR plates, GPU preprocessing",
+        "n": 256,
+        "predictions_reference_identical": 256,
+        "recorded_peak_host_RSS_bytes": 567144448,
+        "recorded_peak_host_RSS_MiB": 540.87109375,
+        "timing_valid": false
+      },
+      {
+        "model_task": "WATERec speculative plates",
+        "n": 256,
+        "predictions_reference_identical": 256,
+        "recorded_peak_host_RSS_bytes": 578453504,
+        "recorded_peak_host_RSS_MiB": 551.65625,
+        "timing_valid": false
+      },
+      {
+        "model_task": "WATERec R512 prices",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 544215040,
+        "recorded_peak_host_RSS_MiB": 519.00390625,
+        "timing_valid": false
+      },
+      {
+        "model_task": "WATERec R1024 prices (research)",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 543526912,
+        "recorded_peak_host_RSS_MiB": 518.34765625,
+        "timing_valid": false
+      },
+      {
+        "model_task": "Florence plates",
+        "n": 256,
+        "predictions_reference_identical": 256,
+        "recorded_peak_host_RSS_bytes": 797298688,
+        "recorded_peak_host_RSS_MiB": 760.36328125,
+        "timing_valid": false
+      },
+      {
+        "model_task": "Florence prices",
+        "n": 206,
+        "predictions_reference_identical": 206,
+        "recorded_peak_host_RSS_bytes": 799625216,
+        "recorded_peak_host_RSS_MiB": 762.58203125,
+        "timing_valid": false
+      }
+    ]
+  }
+}

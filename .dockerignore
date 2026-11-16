@@ -1,0 +1,11 @@
+.git
+.venv
+.validation
+dataset
+dataset_price
+weights
+artifacts
+annotator/static/images
+**/__pycache__
+**/.ipynb_checkpoints
+*.zip

@@ -1,0 +1,23 @@
+# Native aspect-preserving patches; tokens is a budget, not a square resolution.
+dataset_root: dataset
+output_dir: artifacts/waterec_alpr
+pretrained_dir: weights/waterec
+task: plate
+variant: RS
+tokens: 512
+max_label_length: 25
+synthetic_plate_count: 2048  # Known-label generic single-/two-line replay, training only.
+normalization: upper_no_whitespace
+epochs: 20
+warmup_epochs: 3
+batch_size: 16
+encoder_learning_rate: 0.00001
+decoder_learning_rate: 0.00005
+weight_decay: 0.01
+holdout_fraction: 0.1
+split_seed: 20261113
+seed: 20261114
+num_workers: 6
+precision: bf16
+device: cuda
+refit_all_training: true

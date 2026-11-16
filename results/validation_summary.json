@@ -1,0 +1,198 @@
+{
+  "notebook_execution": {
+    "passed": 7,
+    "total": 7,
+    "method": "Fresh kernels, synthetic image/TXT pairs, one selection epoch and full-data refit, real ONNX and TensorRT graphs",
+    "note": "The seven executable workflow notebooks were run before the model-options documentation update; notebook0 is a new Markdown-only guide."
+  },
+  "unit_tests": {
+    "passed": 70,
+    "total": 70
+  },
+  "package_wheel": "Built from an isolated source copy; imported outside the checkout; new family license/provenance/dictionary assets and price-space head construction verified",
+  "reference_checkpoint_api_parity": {
+    "matched": 8,
+    "tested": 8,
+    "note": "Existing private checkpoint was tested but is not included in the release"
+  },
+  "notebook_outputs": "All public notebooks cleared",
+  "private_assets": "Datasets, labels, weights, engines and validation scratch files are ignored and excluded",
+  "docker_build": "Not run: Docker CLI unavailable in the preparation environment. Compose configuration inspected; GPU notebook pipeline executed natively.",
+  "model_options_documentation": {
+    "notebook_schema_checks": 10,
+    "preset_configs": [
+      "configs/alpr_base.yaml",
+      "configs/alpr_tiny.yaml",
+      "configs/alpr_fast_tiny.yaml"
+    ],
+    "updated_bootstraps_checked_for_all_presets": 21,
+    "notebook_outputs": "cleared"
+  },
+  "fast_tiny": {
+    "synthetic_training": "Six actual fits: selection and full-data refit at each of three stages; one epoch per stage; 12 synthetic training/4 validation crops",
+    "notebook_execution": {
+      "passed": 8,
+      "total": 8,
+      "fresh_kernels": true
+    },
+    "onnx_export": "Single graph checked with ONNX checker and native FP32 math parity",
+    "tensorrt": "Actual TensorRT 10.15.1.29 engine built on RTX5090; FP16-allowed encoder / FP32-constrained decoder-refinement",
+    "runtime_parity": {
+      "predictions_compared": 17,
+      "batch_sizes": [
+        1,
+        3,
+        8
+      ],
+      "changing_inputs_and_revisited_shapes": true,
+      "torch_vs_onnx_exact_agreement": true,
+      "cuda_graph_vs_plain_tensorrt_exact_agreement": true,
+      "native_vs_tensorrt_text_agreement_on_smoke": 1.0
+    },
+    "performance_note": "Synthetic functional checks only, not representative accuracy or isolated latency measurements",
+    "leakage_test": "Regression test confirms each selection stage initializes from selection/best.pt, not full-data model.pt",
+    "source_assets": "No fine-tuned weights, private images/labels, engines or credentials bundled",
+    "activation_memory": {
+      "policy": "TensorRT runtime activation resize preview where available + USER_MANAGED per-shape scratch, retained by execution/capture lifetime",
+      "validated": "Real engine rebuilt on TensorRT10.15.1.29; Torch/ONNX text parity and CUDAgraph/plain parity passed on17 predictions at batch1,3,8 includingchangedinputs/revisitedshapes.10 unit tests passed aftermemorychange.",
+      "performance": "Functional checks only; no new public FastTiny latency/VRAM claim from this smoke dataset."
+    },
+    "cache_and_selection_only_regression": {
+      "targeted_tests_passed": 9,
+      "scope": "CPU-only targeted Fast Tiny tests, including selection-only three fits, unchanged stage reuse, label/pixel/membership changes and missing legacy fingerprint rejected before split overwrite",
+      "new_GPU_validation": false
+    }
+  },
+  "updated_utc": "2026-11-14T18:07:07.745728+00:00",
+  "waterec": {
+    "native_preprocessing_identical": 3883,
+    "price_native_predictions_identical": 206,
+    "price_native_exact": 149,
+    "price_native_numeric": 176,
+    "synthetic_replay_images_identical": 2048,
+    "training_smoke": "Actual CPU selection, fresh full refit, checkpoint reload and completed rerun passed",
+    "tensorrt_rebuild_predictions_identical": 3677,
+    "tensorrt_validation_correct": 2475,
+    "tensorrt_unseen_correct": 880,
+    "runtime_imports_torch": false,
+    "orientation_predictions_and_classes_identical": 4136,
+    "orientation_default_enabled": false,
+    "notebook_8": "Fresh setup/gated cells checked; actual training/export/runtime tested separately",
+    "input_content_guard": "Rejects changed pixels, labels or split membership before completed-run reuse; five regression tests",
+    "deployment_guard": "Rejects mismatched task, variant, patch budget, text limit, normalization or explicitly requested checkpoint before loading GPU runtime",
+    "benchmark_identity": "Reports orientation flag, scope, checkpoint, metadata and engine SHA256 identifiers",
+    "direct_public_bundle_benchmark": {
+      "n": 256,
+      "warmups": 5,
+      "encoded_mean_ms": 2.6428835603837797,
+      "predecoded_mean_ms": 1.6784037040906696,
+      "orientation_encoded_mean_ms": 2.9503390069294255,
+      "orientation_predecoded_mean_ms": 1.8550397569470078,
+      "gpu_MiB": 688,
+      "isolated": true
+    },
+    "price_TensorRT_actual": {
+      "n": 206,
+      "strings_and_prepared_arrays_identical": true,
+      "exact": 149,
+      "numeric": 176,
+      "AI_reviewed_numeric": 129,
+      "AI_reviewed_n": 144,
+      "static_batch": 1,
+      "encoded_mean_ms": 1.069492,
+      "predecoded_mean_ms": 0.822072,
+      "process_GPU_MiB": 688
+    }
+  },
+  "ppocr_price": {
+    "official_conversion": "Fresh verified Paddle assets to ONNX to trainable graph; source logits identical",
+    "training_smoke": "CPU FP32 and CUDA BF16 selection plus fresh refit with fit-only BN recovery and auxiliary loss",
+    "native_predictions_identical": 206,
+    "native_exact": 160,
+    "native_numeric": 186,
+    "tensorrt_predictions_identical": 206,
+    "tensorrt_exact": 161,
+    "tensorrt_numeric": 187,
+    "batch_replay": [
+      1,
+      3,
+      8,
+      32
+    ],
+    "onnx_dynamic_parity": [
+      1,
+      2,
+      3,
+      8
+    ],
+    "runtime_imports_torch": false,
+    "notebook_9": "Fresh kernel setup passed; outputs cleared",
+    "benchmark_single_image_encoded_mean_ms": 1.326,
+    "benchmark_single_image_gpu_MiB": 670
+  },
+  "dependency_resolution": "All extras resolve in pip dry-run against PyPI; this is not a Docker build",
+  "source_release_checks": "85 release text files checked, including native C/CUDA and Pillow license assets; no saved notebook outputs or local experiment paths",
+  "current_international_check": "443 exact original crop/GT identities verified; zero exactRGB overlap with training/primary984; frozen WATERec/currentFlorence evaluated without training",
+  "gpu_preprocessing_optin": {
+    "default_enabled": false,
+    "public_full_parity": {
+      "n": 4120,
+      "prepared_inputs_bitwise_identical": true,
+      "predictions_identical": true
+    },
+    "public_orientation_parity": {
+      "n": 4136,
+      "predictions_and_angles_identical": true
+    },
+    "queued_lifecycle_cases": 80,
+    "focused_cpu_cli_tests": 8,
+    "coefficient_CPU_checks": "Native C fixed-point coefficients reproduce Pillow upsample/downsample bytes",
+    "source_native_assets": [
+      "coefficients_native.c",
+      "kernels.cu",
+      "PILLOW_LICENSE"
+    ],
+    "compiled_binaries_bundled": false,
+    "cache_location": "XDG_CACHE_HOME/parseq-ocr/resize or ~/.cache/parseq-ocr/resize",
+    "notebook8_fresh_kernel": true,
+    "private_path_scanner_extended": [
+      ".c",
+      ".cu",
+      "PILLOW_LICENSE"
+    ],
+    "performance_scope": "Eight isolated public batch-1 comparisons on the same 256 images, five warmups; encoded and predecoded scopes recorded separately"
+  },
+  "experimental_speculative_ALPR": {
+    "experimental_opt_in": true,
+    "original_AR_default_unchanged": true,
+    "primary_predictions_identical_to_frozen_speculative": 4120,
+    "native_FP32_primary_predictions_identical": 3677,
+    "cached_FP16_agreement": "4118/4120, two known numeric differences; empirical only",
+    "orientation_native_predictions_and_angles_identical": 4136,
+    "orientation_cached_AR_prediction_agreement": 4131,
+    "source_hashes_bound": true,
+    "context_cleanup_failure_retry_tests": "Passed, including tracked/untracked external contexts and both close orders",
+    "public_RGB_mean_ms": 0.9770046168190069,
+    "public_encoded_mean_ms": 1.964577719263616,
+    "process_GPU_MiB": 698,
+    "unit_tests_full_suite": 70
+  },
+  "speculative_training": {
+    "CPU_staged_selection_fresh_refit_and_completed_reuse": "Passed with 2 fit and 2 held synthetic images; fresh full refit with 4 images; one epoch per phase",
+    "CPU_fixed_epoch_disk_cache": "Passed with 4 synthetic images, one epoch and no held selection",
+    "CUDA_BF16_fixed_epoch": "Passed with 4 synthetic images, one epoch; no isolated performance claim",
+    "parameters": 1386624,
+    "copied_parameters_trainable_with_finite_gradients": true,
+    "target_unchanged_and_SHA_bound": true,
+    "teacher_fold_provenance": "Public fingerprint/split verified where available; legacy/custom unverified; same selected/full hash rejected",
+    "regression_tests": 8,
+    "completed_run_integrity": "Changed pixels/labels/targets/config/source rejected; completed checkpoint content hash verified",
+    "cache_precision": "Strict FP32 teacher; FP16 CPU cross-K/V and probability cache; CUDA BF16 or CPU FP32 draft training"
+  },
+  "host_RAM_probes": {
+    "n": 11,
+    "encoded_fresh_process": true,
+    "all_predictions_match_reference": true,
+    "latency_claim": false
+  }
+}

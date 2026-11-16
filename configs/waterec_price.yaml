@@ -1,0 +1,23 @@
+# Price task adds an explicit space token and preserves punctuation/case.
+dataset_root: dataset_price
+output_dir: artifacts/waterec_price
+pretrained_dir: weights/waterec
+task: price
+variant: R
+tokens: 512
+max_label_length: 25
+synthetic_plate_count: 0
+normalization: none
+epochs: 20
+warmup_epochs: 3
+batch_size: 16
+encoder_learning_rate: 0.00001
+decoder_learning_rate: 0.00005
+weight_decay: 0.01
+holdout_fraction: 0.15
+split_seed: 20261114
+seed: 20261114
+num_workers: 6
+precision: bf16
+device: cuda
+refit_all_training: true
