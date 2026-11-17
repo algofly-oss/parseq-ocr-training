@@ -1,3 +1,4 @@
+from parseq_ocr.metrics import EXACT_POLICY
 """Actual train orchestration rejects changed inputs before reusing old runs."""
 import json
 from pathlib import Path
@@ -23,7 +24,7 @@ def completed_run(tmp_path, monkeypatch):
         "output_dir": tmp_path / "run",
         "split_manifest": split,
         "task": "plate",
-        "normalization": "upper_no_whitespace",
+        "normalization": "none",
         "synthetic_plate_count": 0,
         "epochs": 1,
         "device": "cpu",
@@ -35,7 +36,7 @@ def completed_run(tmp_path, monkeypatch):
     def fake_fit(records, held, config, folder, epochs, resume):
         calls.append((len(records), len(held)))
         folder.mkdir(parents=True, exist_ok=True)
-        result = {"selected_epoch": 1}
+        result = {"selected_epoch": 1, "selection_policy": EXACT_POLICY}
         (folder / "summary.json").write_text(json.dumps(result))
         (folder / "model.pt").write_bytes(b"not-a-real-model")
         return result

@@ -6,7 +6,7 @@ import torch
 from PIL import Image, ImageEnhance
 from torch.utils.data import Dataset, DataLoader
 from .ppocr_models import VOCAB, create_model, restore_bn, preprocess, decode
-from .metrics import score_pairs, score_price_values
+from .metrics import score_pairs, selection_score, EXACT_POLICY
 
 from .ppocr_data import canonical, scan_labeled, split_price_holdout
 
@@ -64,14 +64,13 @@ def evaluate_model(model, rows, cfg, output=None):
         with autocast(cfg):
             z = model(x.to(cfg.get("device", "cuda")))
         pred.extend(
-            dict(image=i, gt=gt, prediction=t.strip())
+            dict(image=i, gt=gt, prediction=t)
             for i, gt, t in zip(ids, labels, decode(z.argmax(-1).cpu().tolist()))
         )
     labels = [r["gt"] for r in pred]
     texts = [r["prediction"] for r in pred]
     metrics = {
         **score_pairs(labels, texts, "none"),
-        **score_price_values(labels, texts),
         "precision": cfg.get("precision", "bf16"),
     }
     if output:
@@ -146,11 +145,7 @@ def _fit(cfg, rows, held, epochs, folder):
         if held:
             row["holdout"] = evaluate_model(model, held, cfg)
             m = row["holdout"]
-            score = (
-                (m["exact_accuracy"], m["exact_accuracy"])
-                if cfg["selection_metric"] == "exact"
-                else (m["numeric_accuracy"], m["exact_accuracy"])
-            )
+            score = selection_score(m)
         else:
             score = (epoch, epoch)
         if score > best:
@@ -167,7 +162,8 @@ def _fit(cfg, rows, held, epochs, folder):
                     "inference_parameters": parameters,
                     "training_parameters": sum(p.numel() for p in model.parameters()),
                     "recover_bn": cfg.get("recover_bn", True),
-                    "selection_metric": cfg["selection_metric"],
+                    "selection_metric": "exact",
+                    "selection_policy": EXACT_POLICY,
                     "full_fit": not bool(held),
                 },
                 folder / "model.pt",
@@ -181,6 +177,8 @@ def _fit(cfg, rows, held, epochs, folder):
 def train(config, fit_rows=None, held_rows=None):
     """Explicit manifests may reproduce a prior train-only fold; no val selection."""
     cfg = dict(config)
+    if cfg.get("selection_metric", "exact") != "exact":
+        raise ValueError("Only literal exact checkpoint selection is supported")
     if cfg.get("epochs", 0) < 1 or cfg.get("batch_size", 0) < 1:
         raise ValueError(
             "Positive epochs and batch_size required; existing checkpoints are never reused"
@@ -224,7 +222,8 @@ def train(config, fit_rows=None, held_rows=None):
                 "fit_n": len(fit),
                 "holdout_n": len(held),
                 "full_fit_n": len(fit + held),
-                "selection_metric": cfg["selection_metric"],
+                "selection_metric": "exact",
+                    "selection_policy": EXACT_POLICY,
                 "initialization": "fresh pinned official medium model for bothselectionandfullfit; freshBNcalibrationonrespectivefitonly; no selection checkpoint asfullfitinit",
                 "historical_note": "Preset uses exactinternalholdout selection; historicalwinnerselected15. Current dataset/precision/environment mayselectdifferentepoch.",
             },
@@ -259,4 +258,4 @@ class TorchRecognizer:
         x = torch.stack(
             [torch.from_numpy(preprocess(im, self.config["height"])) for im in images]
         ).to(self.config["device"])
-        return [s.strip() for s in decode(self.model(x).argmax(-1).cpu().tolist())]
+        return decode(self.model(x).argmax(-1).cpu().tolist())

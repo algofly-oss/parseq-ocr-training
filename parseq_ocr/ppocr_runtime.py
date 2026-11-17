@@ -120,7 +120,7 @@ class PPTRTManaged:
                     if x and x != prev:
                         out.append(self.meta["vocabulary"][x])
                     prev = x
-                texts.append("".join(out).strip())
+                texts.append("".join(out))
             return texts
         finally:
             self.cuda_context.pop()

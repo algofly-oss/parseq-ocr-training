@@ -1,3 +1,4 @@
+from parseq_ocr.metrics import EXACT_POLICY
 import pytest
 import torch
 from parseq_ocr.config import load_config
@@ -75,7 +76,7 @@ def test_stage_selection_never_initializes_from_full_data_fit(tmp_path, monkeypa
         calls.append((cfg.copy(), [r['label'] for r in records], [r['label'] for r in held]))
         out.mkdir(parents=True, exist_ok=True)
         (out/('best.pt' if held else 'model.pt')).touch()
-        return {'selected_epoch': 1}
+        return {'selected_epoch': 1, 'selection_policy': EXACT_POLICY}
     monkeypatch.setattr(fast_training, '_fit', fit)
     cfg = config()
     cfg.update(dataset_root=tmp_path/'dataset', output_dir=tmp_path/'runs',
@@ -103,7 +104,7 @@ def _cached_recipe(tmp_path, monkeypatch, refit=False):
     def fit(records, held, cfg, out, epochs, resume):
         calls.append(cfg.copy())
         out.mkdir(parents=True, exist_ok=True)
-        summary = {'selected_epoch': 1}
+        summary = {'selected_epoch': 1, 'selection_policy': EXACT_POLICY}
         (out/'summary.json').write_text(json.dumps(summary))
         (out/('best.pt' if held else 'model.pt')).touch()
         return summary

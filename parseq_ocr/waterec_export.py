@@ -255,14 +255,10 @@ def _validate_checkpoint_config(config, actual):
     for key in ("task", "variant", "tokens", "max_label_length"):
         if key in config and key in actual and config[key] != actual[key]:
             raise ValueError(f"Configuration {key} does not match checkpoint metadata")
-    normalization = actual.get(
-        "normalization",
-        "upper_no_whitespace" if actual.get("task", "plate") == "plate" else "none",
-    )
-    if config.get("normalization", normalization) != normalization:
-        raise ValueError(
-            "Configuration normalization does not match checkpoint task/metadata"
-        )
+    # Annotation normalization is provenance, not an image/model architecture field.
+    # Existing checkpoints retain their recorded value; missing/new metadata defaults
+    # to literal labels. Inference/evaluation never applies this value to output text.
+    normalization = actual.get("normalization", "none")
     return normalization
 
 

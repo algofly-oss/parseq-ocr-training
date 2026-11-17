@@ -7,7 +7,7 @@ variant: RS
 tokens: 512
 max_label_length: 25
 synthetic_plate_count: 2048  # Known-label generic single-/two-line replay, training only.
-normalization: upper_no_whitespace
+normalization: none
 epochs: 20
 warmup_epochs: 3
 batch_size: 16

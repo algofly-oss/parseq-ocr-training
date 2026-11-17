@@ -1,3 +1,4 @@
+from .metrics import require_exact_selection, EXACT_POLICY
 """Leakage-free warm start, parallel adaptation and smaller-input replay stages."""
 import json
 import hashlib
@@ -80,10 +81,13 @@ def train_fast_tiny(config, resume=True):
         summary = folder/"selection/summary.json"
         selected = json.loads(summary.read_text()) if summary.exists() else _fit(
             training, held, selection_cfg, folder/"selection", epochs, resume)
+        require_exact_selection(selected, str(summary))
         full_cfg = dict(cfg)
         if previous and config["refit_all_training"]:
             full_cfg.update(initial_checkpoint=previous/"full_fit/model.pt",
                             initial_image_size=previous_size)
+        if (folder/"full_fit/summary.json").exists():
+            require_exact_selection(json.loads((folder/"full_fit/summary.json").read_text()), str(folder/"full_fit/summary.json"))
         if config["refit_all_training"] and not (folder/"full_fit/summary.json").exists():
             _fit(records, [], full_cfg, folder/"full_fit", selected["selected_epoch"], resume)
         folder.mkdir(parents=True, exist_ok=True)
@@ -91,7 +95,7 @@ def train_fast_tiny(config, resume=True):
                                                              "full_fit": serializable(full_cfg)}, indent=2))
         summaries.append(dict(stage=name, **selected))
         previous, previous_size = folder, overrides["image_size"]
-    result = {"recipe": "fast_tiny", "stages": summaries,
+    result = {"selection_policy": EXACT_POLICY, "recipe": "fast_tiny", "stages": summaries,
               "selection_protocol": "Every stage uses the same training-only label-disjoint holdout. "
                                     "Selection starts from preceding selection/best.pt; refit starts "
                                     "from preceding full_fit/model.pt when refit_all_training is enabled. Validation is never read.",

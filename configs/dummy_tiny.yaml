@@ -7,7 +7,7 @@ model: parseq-tiny
 image_size:
 - 64
 - 256
-normalization: upper_no_whitespace
+normalization: none
 epochs: 1
 batch_size: 4
 learning_rate: 0.0001

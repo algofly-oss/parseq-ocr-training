@@ -135,7 +135,7 @@ class SingleGraphTensorRTRecognizer:
         for ids in rows:
             if m["eos_id"] in ids:
                 ids = ids[:ids.index(m["eos_id"])]
-            texts.append(normalize("".join(m["vocabulary"][i] for i in ids), m["normalization"]))
+            texts.append("".join(m["vocabulary"][i] for i in ids))
         return texts
 
     def close(self):

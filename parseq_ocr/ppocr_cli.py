@@ -101,7 +101,7 @@ def main():
             else:
                 from .ppocr_data import scan_labeled
                 from .ppocr_data import canonical
-                from .metrics import score_pairs, score_price_values
+                from .metrics import score_pairs
 
                 rows = canonical(
                     json.loads(Path(a.manifest).read_text())
@@ -126,7 +126,6 @@ def main():
                 labels = [r["label"] for r in rows]
                 result = {
                     **score_pairs(labels, pred, "none"),
-                    **score_price_values(labels, pred),
                     "runtime": a.runtime,
                     "batch_size": a.batch_size,
                     "precision": "nativeFP32"

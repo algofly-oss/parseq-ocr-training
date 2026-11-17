@@ -33,7 +33,7 @@ class TorchRecognizer:
         with autocast(self.config):
             logits = self.system(tensor)
         texts = self.system.tokenizer.decode(logits.float().softmax(-1))[0]
-        return [normalize(text, self.config["normalization"]) for text in texts]
+        return list(texts)
 
 
 class ONNXRecognizer:
@@ -61,7 +61,7 @@ class ONNXRecognizer:
             for ids in rows.tolist():
                 if m["eos_id"] in ids:
                     ids = ids[:ids.index(m["eos_id"])]
-                texts.append(normalize("".join(m["vocabulary"][i] for i in ids), m["normalization"]))
+                texts.append("".join(m["vocabulary"][i] for i in ids))
             return texts
         pixels = image_tensor(images, (m["height"], m["width"]))
         memory = self.encoder.run(None, {"pixels": pixels})[0]
@@ -89,5 +89,5 @@ class ONNXRecognizer:
         for ids in logits.argmax(-1).tolist():
             if m["eos_id"] in ids:
                 ids = ids[:ids.index(m["eos_id"])]
-            texts.append(normalize("".join(m["vocabulary"][i] for i in ids), m["normalization"]))
+            texts.append("".join(m["vocabulary"][i] for i in ids))
         return texts

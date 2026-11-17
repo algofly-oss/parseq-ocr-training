@@ -4,7 +4,7 @@ output_dir: artifacts/parseq_alpr
 pretrained_dir: weights/pretrained
 model: parseq
 image_size: [64, 256]  # height, width
-normalization: upper_no_whitespace
+normalization: none
 epochs: 20
 batch_size: 64
 learning_rate: 0.0001

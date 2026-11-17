@@ -127,7 +127,7 @@ class TensorRTRecognizer:
         texts=[]
         for row in logits.argmax(-1).cpu().tolist():
             if m['eos_id'] in row:row=row[:row.index(m['eos_id'])]
-            texts.append(normalize(''.join(m['vocabulary'][i] for i in row), m.get('normalization', 'upper_no_whitespace')))
+            texts.append(''.join(m['vocabulary'][i] for i in row))
         return texts
 
     def close(self):

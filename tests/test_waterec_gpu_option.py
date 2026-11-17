@@ -115,7 +115,7 @@ def test_benchmark_records_preprocessing_identity_without_gpu_execution(
         "variant": "RS",
         "max_tokens": 512,
         "max_len": 25,
-        "normalization": "upper_no_whitespace",
+        "normalization": "none",
         "checkpoint_sha256": "selected-model-identity",
     }
     (deploy / "metadata.json").write_text(json.dumps(metadata))
@@ -141,7 +141,7 @@ def test_benchmark_records_preprocessing_identity_without_gpu_execution(
         "task": "plate",
         "variant": "RS",
         "tokens": 512,
-        "normalization": "upper_no_whitespace",
+        "normalization": "none",
         "output_dir": tmp_path,
         "gpu_preprocess": gpu,
     }

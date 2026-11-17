@@ -12,7 +12,7 @@ def fixture_config(tmp_path):
         "variant": "RS",
         "max_tokens": 512,
         "max_len": 25,
-        "normalization": "upper_no_whitespace",
+        "normalization": "none",
     }
     (folder / "metadata.json").write_text(json.dumps(metadata))
     return {
@@ -20,7 +20,7 @@ def fixture_config(tmp_path):
         "task": "plate",
         "variant": "RS",
         "tokens": 512,
-        "normalization": "upper_no_whitespace",
+        "normalization": "none",
     }, metadata
 
 

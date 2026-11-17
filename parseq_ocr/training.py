@@ -10,7 +10,7 @@ import torch
 from .config import serializable
 from .data import scan_pairs, split_holdout, validate_labels, make_loader, normalize
 from .models import create_system
-from .metrics import score_pairs
+from .metrics import score_pairs, selection_score, require_exact_selection, EXACT_POLICY
 
 
 def autocast(config):
@@ -32,11 +32,10 @@ def evaluate_records(system, records, config, output=None):
             logits = system(pixels.to(config["device"]))
         decoded = system.tokenizer.decode(logits.float().softmax(-1))[0]
         for name, gt, pred in zip(names, texts, decoded):
-            pred = normalize(pred, config["normalization"])
             labels.append(gt)
             predictions.append(pred)
             rows.append({"image": name, "gt": gt, "prediction": pred})
-    summary = score_pairs(labels, predictions, config["normalization"])
+    summary = score_pairs(labels, predictions)
     if output:
         output = Path(output)
         output.mkdir(parents=True, exist_ok=True)
@@ -55,6 +54,13 @@ def _seed(config):
 def _fit(records, held, config, folder, epochs, resume):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
+    last = folder / "last.pt"
+    resume_state = None
+    if last.exists():
+        if not resume:
+            raise FileExistsError(f"Existing training state: {last}; use resume or a new output_dir")
+        resume_state = torch.load(last, map_location="cpu", weights_only=False)
+        require_exact_selection(resume_state, str(last))
     _seed(config)
     system = create_system(config).to(config["device"])
     validate_labels(records+held, system.tokenizer, config.get("max_label_length", 25))
@@ -67,11 +73,8 @@ def _fit(records, held, config, folder, epochs, resume):
     total_steps = epochs*len(training)
     start_epoch, steps, selected_epoch, best = 1, 0, 0, (-1., -float("inf"))
     last = folder/"last.pt"
-    if last.exists():
-        if not resume:
-            raise FileExistsError(f"Existing training state: {last}; use resume=True or a new output_dir")
-        # Only restore locally generated training state, never downloaded optimizer pickles.
-        state = torch.load(last, map_location=config["device"], weights_only=False)
+    if resume_state is not None:
+        state = resume_state
         system.model.load_state_dict(state["model"])
         optimizer.load_state_dict(state["optimizer"])
         start_epoch, steps = state["epoch"]+1, state["steps"]
@@ -114,7 +117,7 @@ def _fit(records, held, config, folder, epochs, resume):
                "seconds_this_process": time.perf_counter()-started}
         if held:
             row["holdout"] = evaluate_records(system, held, config)
-            score = (row["holdout"]["exact_accuracy"], -row["holdout"]["cer"])
+            score = selection_score(row["holdout"])
         else:
             score = (epoch, 0.)
         if score > best:
@@ -122,12 +125,12 @@ def _fit(records, held, config, folder, epochs, resume):
             torch.save(system.model.state_dict(), folder/("best.pt" if held else "model.pt"))
         with history_path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(row)+"\n")
-        torch.save({"model": system.model.state_dict(), "optimizer": optimizer.state_dict(),
+        torch.save({"selection_policy": EXACT_POLICY, "model": system.model.state_dict(), "optimizer": optimizer.state_dict(),
                     "epoch": epoch, "steps": steps, "selected_epoch": selected_epoch, "best": best,
                     "python_rng": random.getstate(), "numpy_rng": np.random.get_state(),
                     "torch_rng": torch.get_rng_state(), "permutation_rng": system.rng.bit_generator.state}, last)
         print(json.dumps(row), flush=True)
-    summary = {"epochs": epochs, "selected_epoch": selected_epoch,
+    summary = {"selection_policy": EXACT_POLICY, "epochs": epochs, "selected_epoch": selected_epoch,
                "selection_score": list(best) if held else None,
                "training_images": len(records), "holdout_images": len(held),
                "parameters": sum(p.numel() for p in system.parameters())}
@@ -136,6 +139,8 @@ def _fit(records, held, config, folder, epochs, resume):
 
 
 def train(config, resume=True):
+    if config.get("normalization", "none") != "none":
+        raise ValueError("Literal training labels require normalization: none")
     if config.get("recipe") == "fast_tiny":
         from .fast_training import train_fast_tiny
         return train_fast_tiny(config, resume)
@@ -156,8 +161,11 @@ def train(config, resume=True):
     summary = output/"selection/summary.json"
     selection = json.loads(summary.read_text()) if summary.exists() else _fit(
         training, held, config, output/"selection", config["epochs"], resume)
+    require_exact_selection(selection, str(summary))
     if config["refit_all_training"]:
         summary = output/"full_fit/summary.json"
+        if summary.exists():
+            require_exact_selection(json.loads(summary.read_text()), str(summary))
         if not summary.exists():
             _fit(records, [], config, output/"full_fit", selection["selected_epoch"], resume)
     return selection

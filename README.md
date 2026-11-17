@@ -8,17 +8,17 @@ A standalone, notebook-first workflow for **PARSeq Base, PARSeq Tiny and the cus
 
 This is also a record of experiments, benchmarks and failures—not just a training product. See [experiment methods/results](docs/experiments.md), the [scenario capability matrix](docs/capabilities.md) and [aggregate evidence metadata](results/scenario_evidence.json). Separate trained checkpoints and cohorts are explicit; dummy-data execution is not accuracy evidence.
 
-| PARSeq reference | Params / H×W | Exact / cohort; mean Lev. | RGB / encoded mean ms | GPU / host peak MiB |
+| PARSeq reference | Params / H×W | Exact matches / cohort (accuracy) | RGB / encoded mean ms | GPU / host peak MiB |
 |---|---|---|---:|---:|
-| Base, ALPR | 23.980M /64×256 | 2,415/2,693; Lev NM | NM /NM | NM /NM |
-| Fast Tiny, ALPR | 6.049M /48×192 | **203/256 timing subset**;96.50% | 0.686226 /1.658176 | 682 /533 |
-| Base, price | 23.981M /64×256 | 148/206;87.47% | NM /NM | NM /NM |
-| Tiny, price (native BF16) | 6.092M /64×256 | 118/206;81.94% | NM /NM | NM /NM |
-| Fast Tiny, price | 6.049M /48×192 | 112/206;81.15% | 0.889019 /1.094589 | 688 /502 |
+| Base, ALPR | 23.980M /64×256 | Not verified for literal output | NM /NM | NM /NM |
+| Fast Tiny, ALPR | 6.049M /48×192 | **203/256 timing subset (79.30%)** | 0.686226 /1.658176 | 682 /533 |
+| Base, price | 23.981M /64×256 | 148/206 (71.84%) | NM /NM | NM /NM |
+| Tiny, price (native BF16) | 6.092M /64×256 | 118/206 (57.28%) | NM /NM | NM /NM |
+| Fast Tiny, price | 6.049M /48×192 | 112/206 (54.37%) | 0.889019 /1.094589 | 688 /502 |
 
-NM means unmeasured in the current matched runtime reference. Fast Tiny's verified plate timing accuracy is **203/256, not a full2,693-image result**. Lev is normalized edit similarity, not exact accuracy. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. See the linked methods before comparing rows or old snapshots.
+NM means unmeasured in the current matched runtime reference. Fast Tiny's verified plate timing accuracy is **203/256, not a full2,693-image result**. Current accuracy reporting uses literal full-string exact match only. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. The historical Base ALPR aggregate is not currently certified against unnormalized decoder output. See the linked methods before comparing rows or old snapshots.
 
-The price comparison exposes a limitation: Fast Tiny is fast but has only112/206 exact and88/144 reviewed numeric, versus Florence148/206 and133/144. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/vllm-ocr-training), [CCT-S](https://github.com/algofly-oss/license-plate-ocr-training).
+The price comparison exposes a limitation: Fast Tiny is fast but has only 112/206 exact matches, versus Florence’s 148/206. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/vllm-ocr-training), [CCT-S](https://github.com/algofly-oss/license-plate-ocr-training).
 
 | Option | Starting representation | Decode / training |
 | --- | --- | --- |

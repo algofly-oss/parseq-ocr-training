@@ -21,8 +21,8 @@ def load_config(path="configs/alpr.yaml"):
         raise ValueError("image_size must be positive multiples of patch height4 and width8")
     if not 0 < config["holdout_fraction"] < 1:
         raise ValueError("holdout_fraction must lie between0 and1")
-    if config["normalization"] not in ("upper_no_whitespace", "none"):
-        raise ValueError("Unsupported label normalization")
+    if config["normalization"] not in ("none", "upper_no_whitespace"):
+        raise ValueError("Unsupported annotation-normalization metadata")
     recipe = config.get("recipe", "standard")
     if recipe not in ("standard", "fast_tiny"):
         raise ValueError("recipe must be standard or fast_tiny")

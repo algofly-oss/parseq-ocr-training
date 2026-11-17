@@ -11,7 +11,10 @@ from parseq_ocr._vendor.waterec.decoder import NaARDecoder
 def test_checkpoint_deployment_contract_rejects_changed_geometry_or_task():
     source = dict(tokens=512, max_label_length=25, task="plate", variant="RS", normalization="upper_no_whitespace")
     assert _validate_checkpoint_config(source, source) == "upper_no_whitespace"
-    for key, value in [("tokens", 384), ("max_label_length", 24), ("task", "price"), ("variant", "R"), ("normalization", "none")]:
+    assert _validate_checkpoint_config({**source, "normalization": "none"}, source) == "upper_no_whitespace"
+    missing = {k:v for k,v in source.items() if k != "normalization"}
+    assert _validate_checkpoint_config(missing, missing) == "none"
+    for key, value in [("tokens", 384), ("max_label_length", 24), ("task", "price"), ("variant", "R")]:
         changed = {**source, key: value}
         with pytest.raises(ValueError):
             _validate_checkpoint_config(changed, source)

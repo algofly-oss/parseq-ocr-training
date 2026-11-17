@@ -27,11 +27,10 @@ def test_missing_label_is_not_silently_skipped(tmp_path):
         scan_pairs(tmp_path)
 
 
-def test_strict_and_alphanumeric_scores_are_different():
+def test_only_literal_exact_is_reported():
     result = score_pairs(["ab 12", "CD34"], ["AB-12", "CD34"])
     assert result["exact_accuracy"] == .5
-    assert result["alphanumeric_exact_accuracy"] == 1
-    assert result["cer"] == 1/8
+    assert set(result) == {"n", "correct", "exact_accuracy", "metric_policy"}
 
 
 def test_pixel_overlap_is_found_even_with_different_filenames(tmp_path):

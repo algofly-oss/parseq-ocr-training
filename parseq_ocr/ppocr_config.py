@@ -14,8 +14,8 @@ def load_config(path="configs/ppocr_price.yaml"):
         cfg[key] = p if p.is_absolute() else ROOT / p
     if cfg.get("height") != 128 or cfg.get("width") != 320:
         raise ValueError("Validated price preset requires128×320")
-    if cfg.get("selection_metric") not in ["exact", "numeric_then_exact"]:
-        raise ValueError("Selection metric must be explicit")
+    if cfg.get("selection_metric") != "exact":
+        raise ValueError("Only literal exact selection_metric: exact is supported")
     if cfg.get("epochs", 0) < 1 or cfg.get("batch_size", 0) < 1:
         raise ValueError("Positive epochs/batch required")
     if not 0 < cfg.get("holdout_fraction", 0.1) < 1:

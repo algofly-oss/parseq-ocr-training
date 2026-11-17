@@ -12,14 +12,14 @@ def test_ctc_repeat_collapse_happens_before_blank_removal():
     assert decode([[a, a, 0, a, b, b, 0, b]]) == ["11.."]
 
 
-def test_price_group_split_rounds_preserves_spaces_and_excludes_blanks(tmp_path):
+def test_price_group_split_preserves_literal_spaces_and_rows(tmp_path):
     for i, text in enumerate([" 10 DH ", "10 DH", "10.50", "  ", "$2.00"]):
         Image.new("RGB", (3, 2)).save(tmp_path / f"{i}.png")
         (tmp_path / f"{i}.txt").write_text(text)
     rows = scan_labeled(tmp_path)
-    assert len(rows) == 4 and rows[0]["label"] == "10 DH"
+    assert len(rows) == 5 and rows[0]["label"] == " 10 DH " and rows[3]["label"] == "  "
     fit, held = split_price_holdout(rows, 0.5, 20261114)
-    assert len({r["label"] for r in held}) == 2  # round(3*.5), not floor
+    assert len({r["label"] for r in held}) == 2  # round(5*.5), not floor
     assert not {r["label"] for r in fit} & {r["label"] for r in held}
 
 

@@ -16,5 +16,8 @@ def test_label_roundtrip_and_original_preservation(tmp_path):
         assert client.put("/api/labels/sample.png", json={"text": "AB12"}).status_code == 200
         assert (tmp_path/"sample.txt").read_text() == "AB12"
         assert client.get("/images/sample.png").status_code == 200
-        assert client.put("/api/labels/sample.png", json={"text": " "}).status_code == 422
+        assert client.put("/api/labels/sample.png", json={"text": " "}).status_code == 200
+        assert (tmp_path/"sample.txt").read_text() == " "
+        assert client.put("/api/labels/sample.png", json={"text": ""}).status_code == 422
+        assert client.put("/api/labels/sample.png", json={"text": "A\nB"}).status_code == 422
     assert (tmp_path/"sample.png").exists()

@@ -6,7 +6,7 @@ model: parseq-tiny
 recipe: fast_tiny
 image_size: [48, 192]  # final height, width; warm start/adaptation use 64x256
 max_label_length: 12  # plus EOS; oversized labels raise an error
-normalization: upper_no_whitespace
+normalization: none
 warm_start_epochs: 20
 warm_start_learning_rate: 0.0001
 adaptation_epochs: 5
