@@ -11,12 +11,12 @@ This is also a record of experiments, benchmarks and failures—not just a train
 | PARSeq reference | Params / H×W | Exact matches / cohort (accuracy) | RGB / encoded mean ms | GPU / host peak MiB |
 |---|---|---|---:|---:|
 | Base, ALPR | 23.980M /64×256 | Not verified for literal output | NM /NM | NM /NM |
-| Fast Tiny, ALPR | 6.049M /48×192 | **203/256 timing subset (79.30%)** | 0.686226 /1.658176 | 682 /533 |
+| Fast Tiny, ALPR | 6.049M /48×192 | **2,377/2,693 (88.27%)** | 0.686226 /1.658176 | 682 /533 |
 | Base, price | 23.981M /64×256 | 148/206 (71.84%) | NM /NM | NM /NM |
 | Tiny, price (native BF16) | 6.092M /64×256 | 118/206 (57.28%) | NM /NM | NM /NM |
 | Fast Tiny, price | 6.049M /48×192 | 112/206 (54.37%) | 0.889019 /1.094589 | 688 /502 |
 
-NM means unmeasured in the current matched runtime reference. Fast Tiny's verified plate timing accuracy is **203/256, not a full2,693-image result**. Current accuracy reporting uses literal full-string exact match only. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. The historical Base ALPR aggregate is not currently certified against unnormalized decoder output. See the linked methods before comparing rows or old snapshots.
+NM means unmeasured in the current matched runtime reference. Fast Tiny’s fresh literal replay verifies **2,377/2,693 validation and 715/984 reviewed unseen matches** ([receipt](results/literal_alpr_replay_2026_11_17.json)); the historical timing measurement uses 256 crops and is not a new full-cohort latency measurement. Current accuracy reporting uses literal full-string exact match only. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. The historical Base ALPR aggregate is not currently certified against unnormalized decoder output. See the linked methods before comparing rows or old snapshots.
 
 The price comparison exposes a limitation: Fast Tiny is fast but has only 112/206 exact matches, versus Florence’s 148/206. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/vllm-ocr-training), [CCT-S](https://github.com/algofly-oss/license-plate-ocr-training).
 
