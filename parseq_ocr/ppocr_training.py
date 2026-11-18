@@ -43,7 +43,7 @@ def loader(rows, cfg, augment=False):
         Crops(rows, cfg["height"], augment),
         batch_size=cfg.get("batch_size", 64),
         shuffle=augment,
-        num_workers=0,
+        num_workers=cfg.get("workers", 0),
     )
 
 
@@ -88,14 +88,15 @@ def _fit(cfg, rows, held, epochs, folder):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.set_num_threads(4)
+    torch.set_num_threads(cfg.get("cpu_threads", 4))
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     device = cfg.get("device", "cuda")
     model = create_model(cfg).to(device)
     if cfg.get("recover_bn", True):
-        sample = random.Random(seed).sample(rows, min(128, len(rows)))
-        restore_bn(model, (x for x, *_ in loader(sample, cfg)))
+        sample = random.Random(seed).sample(rows, min(cfg.get("calibration_samples", 128), len(rows)))
+        calibration_cfg = {**cfg, "batch_size": cfg.get("calibration_batch_size", cfg.get("batch_size", 64))}
+        restore_bn(model, (x for x, *_ in loader(sample, calibration_cfg)))
     parameters = sum(p.numel() for p in model.parameters())
     if cfg.get("auxiliary", True):
         from .ppocr_auxiliary import AuxiliaryReader
@@ -214,23 +215,25 @@ def train(config, fit_rows=None, held_rows=None):
         json.dumps({"fit": fit, "holdout": held, "audit": audit}, indent=2)
     )
     selected = _fit(cfg, fit, held, cfg["epochs"], output / "selection")
-    _fit(cfg, fit + held, [], selected, output / "full_fit")
+    if cfg.get("refit", True):
+        _fit(cfg, fit + held, [], selected, output / "full_fit")
     (output / "recipe.json").write_text(
         json.dumps(
             {
                 "selected_epoch": selected,
                 "fit_n": len(fit),
                 "holdout_n": len(held),
-                "full_fit_n": len(fit + held),
+                "full_fit_n": len(fit + held) if cfg.get("refit", True) else 0,
+                "refit": cfg.get("refit", True),
                 "selection_metric": "exact",
                     "selection_policy": EXACT_POLICY,
-                "initialization": "fresh pinned official medium model for bothselectionandfullfit; freshBNcalibrationonrespectivefitonly; no selection checkpoint asfullfitinit",
+                "initialization": ("fresh pinned official medium model for selection and fresh full refit; respective FIT-only BN calibration" if cfg.get("refit", True) else "fresh pinned official medium model for FIT-only selection; no full refit; DEV never gradient/calibration"),
                 "historical_note": "Preset uses exactinternalholdout selection; historicalwinnerselected15. Current dataset/precision/environment mayselectdifferentepoch.",
             },
             indent=2,
         )
     )
-    return output / "full_fit/model.pt"
+    return output / ("full_fit/model.pt" if cfg.get("refit", True) else "selection/model.pt")
 
 
 def load_model(checkpoint, device="cpu"):

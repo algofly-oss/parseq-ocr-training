@@ -20,4 +20,10 @@ def load_config(path="configs/ppocr_price.yaml"):
         raise ValueError("Positive epochs/batch required")
     if not 0 < cfg.get("holdout_fraction", 0.1) < 1:
         raise ValueError("Holdout fraction must lie0..1")
+    for key in ("initial_checkpoint", "train_manifest", "validation_manifest", "precursor_receipt"):
+        if cfg.get(key):
+            value = Path(cfg[key]).expanduser()
+            cfg[key] = value if value.is_absolute() else ROOT / value
+    if cfg.get("recipe") not in (None, "legacy", "corrected_fixed_bn_v1", "selection_only_precursor_v1"):
+        raise ValueError("Unknown PP recipe; use legacy or corrected_fixed_bn_v1")
     return cfg

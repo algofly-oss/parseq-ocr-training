@@ -1,10 +1,190 @@
 # PARSeq OCR Training
 
-A standalone, notebook-first workflow for **PARSeq Base, PARSeq Tiny and the custom Fast Tiny recipe**: image/TXT data → training → PyTorch inference → ONNX → TensorRT. The numbered workflow follows [vllm-ocr-training](https://github.com/algofly-oss/vllm-ocr-training). No other checkout is needed to use these PARSeq workflows.
+[Download the public energy-meter example](notebooks/00_download_ocr_example.ipynb), then open [1_dataset_preparation.ipynb](notebooks/1_dataset_preparation.ipynb). Set `PARSEQ_CONFIG=configs/energy_meter.yaml` in the kernel environment (for example, `%env PARSEQ_CONFIG=configs/energy_meter.yaml`) before running dataset preparation. Run the numbered notebooks in the same kernel environment.
+
+[Train in Jupyter](notebooks/2_model_training.ipynb) · [Copy the TensorRT runtime](notebooks/6_trt_inference.ipynb). The notebooks expose the training loop, predictions, and automatic engine build.
+
+## Compare the tested TensorRT profiles
+
+### Price tags
+
+![Price crop example](dummy_data/prices/val/000.png)
+
+Expected output is `107.25`. On real tags, cents can be raised or smaller, a currency symbol can split the amount, and unit prices can compete with the headline price. [Open a real benchmark price tag](https://prices.openfoodfacts.org/img/price-tags/000/123/000123564.webp)
+
+![Real benchmark price tag](https://prices.openfoodfacts.org/img/price-tags/000/123/000123564.webp)
+
+| Model | Params | Input | Corrected tags | Public photos | Latency¹ | GPU¹ |
+|---|---:|---|---:|---:|---:|---:|
+| WATERec rank-192 | 20.84M | ≤896 patches | **163/206** | **49/71** | 1.17 ms | 724 MiB |
+| [PP-OCRv6](https://github.com/algofly-oss/ppocrv6-ocr-training) Medium | 15.58M | 128×320 | **163/206** | 6/71 | 0.77 ms | 656 MiB |
+| PP-OCRv6 Small | 3.04M | 128×320 | 160/206 | 13/71 | **0.60 ms** | 652 MiB |
+| [Florence-2](https://github.com/algofly-oss/florence2-ocr-training) Base | 231.41M | 384×384 | 157/206 | 3/71 | 4.95 ms | 1,452 MiB |
+| [PARSeq](https://github.com/algofly-oss/parseq-ocr-training) Fast Tiny | 6.05M | 48×192 | 44/206 | 2/71 | 0.89 ms | 688 MiB |
+
+¹ Mean from decoded RGB on the corrected price crops, RTX 5090, batch one. GPU memory is the sampled process peak. Ranking prioritizes corrected exact matches, then public exact matches. The corrected set includes 68 provisional labels.
+
+### License plates
+
+![Plate crop example](dummy_data/plates/val/000.png)
+
+Expected output is `AB100CD223`. On real crops the reader must keep the character order across unfamiliar fonts, stacked rows, glare, and blur. [Open a real benchmark plate photograph](https://github.com/openalpr/benchmarks/blob/9790ed20d475be1e940a7e2a3f492a97c2ebed9b/endtoend/br/AYO9034.jpg)
+
+![Real benchmark plate photograph](https://raw.githubusercontent.com/openalpr/benchmarks/9790ed20d475be1e940a7e2a3f492a97c2ebed9b/endtoend/br/AYO9034.jpg)
+
+| Model | Params | Input | Reviewed unseen | Local validation | Latency² | GPU² |
+|---|---:|---|---:|---:|---:|---:|
+| WATERec speculative | 27.51M | ≤512 patches | **879/984** | **2,476/2,693** | 1.07 ms | 700 MiB |
+| Florence-2 Base | 231.41M | 224×224 | 857/984 | 2,381/2,693 | 4.88 ms | 1,130 MiB |
+| PARSeq Fast Tiny | 6.05M | 48×192 | 715/984 | 2,377/2,693 | 0.69 ms | 682 MiB |
+| [CCT-S](https://github.com/algofly-oss/cct-ocr-training) | 0.98M | 64×128 | 628/984 | 2,226/2,693 | 0.85 ms | 542 MiB |
+| PP-OCRv6 Medium | 15.58M | Height 48 | 626/984 | 2,339/2,693 | 0.76 ms | 650 MiB |
+
+² Mean from decoded RGB, RTX 5090, batch one. WATERec and Florence-2 timing used the 984 reviewed crops. Other timings come from separate workloads. Ranking uses reviewed unseen exact matches.
+
+All accuracy scores count complete exact strings. Use WATERec when unfamiliar plates or price layouts matter most. PP-OCRv6 Small is the fastest tested option on the corrected price crops. Expand the detailed tables below for more variants, encoded timings, and protocol notes.
+
+<details>
+<summary>All benchmark variants and historical tables</summary>
+
+<!-- ocr-family-comparison:start -->
+
+
+### Naturally tiny plate crops
+
+These 32 visually scorable crops were originally 32–47 pixels wide. Labels were transcribed before inference and score the complete alphanumeric registration in reading order. Printed separators are omitted from the references. The small subset includes 31 distinct registrations. [Source dataset](https://huggingface.co/datasets/sonnetechnology/license-plate-text-recognition-full)
+
+| TensorRT model | Parameters | Model input | Exact match original / 2× Lanczos | Mean latency original / 2× Lanczos | Sampled GPU memory |
+| --- | ---: | --- | ---: | ---: | ---: |
+| WATERec | 27.51M | Up to 512 patches | 11/32 / 21/32 | 1.17 / 1.23 ms | 692 MiB |
+| PARSeq Fast Tiny | 6.05M | 48×192 | 13/32 / 15/32 | 0.52 / 0.58 ms | 682 MiB |
+| Florence-2 | 231.41M | 224×224 | 14/32 / 13/32 | 4.88 / 5.01 ms | 1,130–1,132 MiB |
+| CCT-S | 0.98M | 64×128 | 4/32 / 5/32 | 0.48 / 0.54 ms | 742 MiB |
+
+Batch-one timings start with decoded RGB on the RTX 5090 and include any upscaling. Each profile used eight warmup images and five passes. This subset measures OCR on known plate crops.
+
+
+## Choose an OCR model
+
+### Price-tag OCR
+
+#### Price development
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | Florence-2 | Base, optimized TensorRT price | 231.41M | 384×384 | 106/144 (73.61%) | 5.37 / 5.62 ms | 1,454 MiB |
+| 1 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | R2048, price | 26.12M | 128×256 | 106/144 (73.61%) | 1.97 / 2.20 ms | 716 MiB |
+| 3 | [Florence-2](https://github.com/algofly-oss/florence2-ocr-training) | Base, PyTorch price | 231.41M | 384×384 | 105/144 (72.92%) | 35.37 / 35.53 ms | 1,768 MiB |
+| 4 | [PP-OCRv6](https://github.com/algofly-oss/ppocrv6-ocr-training) | Medium mixed, price | 15.58M | 128×320 | 104/144 (72.22%) | 0.88 / 1.09 ms | 654 MiB |
+| 4 | PP-OCRv6 | Medium FP32, price | 15.58M | 128×320 | 104/144 (72.22%) | 1.41 / 1.69 ms | 588 MiB |
+| 6 | CCT | CCT64, price | 0.98M | 64×128 | 66/144 (45.83%) | 0.75 / 0.94 ms | 542 MiB |
+| 7 | CCT | CCT128, price | 1.15M | 128×256 | 65/144 (45.14%) | — | — |
+
+#### Broader corrected price
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | WATERec | Original TensorRT | 26.12M | ≤1,024 patches | 167/206 (81.07%) | 1.11 / 1.31 ms | 702 MiB |
+| 2 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | R2048, price | 26.12M | 128×256 | 163/206 (79.13%) | 1.97 / 2.20 ms | 716 MiB |
+| 2 | PP-OCRv6 | Currency-adapted TensorRT | 15.58M | 128×320 | 163/206 (79.13%) | 0.77 / 1.00 ms | 656 MiB |
+| 4 | WATERec | Photo-adapted TensorRT | 26.12M | 896 patches | 162/206 (78.64%) | 1.07 / 1.29 ms | 696 MiB |
+| 5 | PP-OCRv6 | Currency-adapted native | 15.58M | 128×320 | 161/206 (78.16%) | 5.43 / 5.43 ms | 724 MiB |
+| 6 | PP-OCRv6 | Small, currency-adapted TensorRT | 3.04M | 128×320 | 160/206 (77.67%) | 0.60 / 0.82 ms | 652 MiB |
+| 7 | Florence-2 | Base, PyTorch price | 231.41M | 384×384 | 159/206 (77.18%) | 33.37 / 35.30 ms | 1,768 MiB |
+| 8 | Florence-2 | Base, optimized TensorRT price | 231.41M | 384×384 | 157/206 (76.21%) | 4.95 / 5.22 ms | 1,452 MiB |
+| 9 | WATERec | Rank 128, photo-adapted TensorRT | 17.87M | 896 patches | 154/206 (74.76%) | 1.08 / 1.34 ms | 696 MiB |
+| 10 | PARSeq | Fast Tiny, TensorRT price | 6.05M | 48×192 | 44/206 (21.36%) | 0.89 / 1.11 ms | 688 MiB |
+
+#### Unseen retail photos
+
+The three public photo cohorts contain 71 scorable references. Rows are ordered by full-string exact matches across the three cohorts.
+
+| Model and TensorRT variant | Parameters | Input | Earlier | Confirmation | Fresh | Total exact | Tiled WebP mean | Tiled GPU peak |
+|---|---:|---|---:|---:|---:|---:|---:|---:|
+| WATERec rank 192 + paired-format head (diagnostic) | 20.84M | ≤896 patches | 23/31 | 15/23 | 11/17 | 49/71 (69.01%) | 2.95–5.36 ms | 702 MiB |
+| WATERec full + paired-format head (experimental) | 26.15M | ≤896 patches | 23/31 | 14/23 | 10/17 | 47/71 (66.20%) | 2.98–5.43 ms | 702 MiB |
+| WATERec full + formatting head (experimental) | 26.15M | ≤896 patches | 23/31 | 9/23 | 11/17 | 43/71 (60.56%) | 2.92–5.33 ms | 702 MiB |
+| WATERec rank 128 + formatting head (experimental) | 17.89M | ≤896 patches | 18/31 | 9/23 | 8/17 | 35/71 (49.30%) | 2.95–5.25 ms | 702 MiB |
+| WATERec full, photo-adapted | 26.12M | ≤896 patches | 18/31 | 5/23 | 5/17 | 28/71 (39.44%) | — | — |
+| WATERec rank 128, photo-adapted | 17.87M | ≤896 patches | 17/31 | 7/23 | 4/17 | 28/71 (39.44%) | — | — |
+| PP-OCRv6 Small, currency-adapted | 3.04M | 128×320 | 8/31 | 2/23 | 3/17 | 13/71 (18.31%) | — | — |
+| PP-OCRv6 Medium, currency-adapted | 15.58M | 128×320 | 3/31 | 0/23 | 3/17 | 6/71 (8.45%) | — | — |
+| Florence-2 Base, optimized | 231.41M | 384×384 | 3/31 | 0/23 | 0/17 | 3/71 (4.23%) | — | — |
+
+The timing range spans the three cohort means from encoded bytes in RAM at batch one. The paired-format head reads the visible separator and currency from image features. The full paired model matched stock at 162/206 on corrected crops. The rank-192 diagnostic read 163/206. Its encoder engine was 23% smaller and averaged 1.174 ms from decoded crops versus 1.135 ms for the full paired model. Preparing lossless, model-sized BMPs at ingestion preserved all 71 predictions and ran in 1.07–1.13 ms at 698 MiB. The prepared-input timings exclude ingest conversion.
+
+#### Historical price
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | Compact restart2, static batch 1 | 17.91M | 2,048 → 512 selected patches | 161/206 (78.16%) | 1.39 ms / — | 708 MiB |
+| 1 | [PP-OCRv6](https://github.com/algofly-oss/ppocrv6-ocr-training) | Medium, historical price | 15.58M | 128×320 | 161/206 (78.16%) | 1.18 ms / — | 654 MiB |
+| 3 | WATERec | R rank128 | 17.86M | 2,048 patches | 159/206 (77.18%) | 1.62 ms / — | 714 MiB |
+| 4 | WATERec | R1024 | 26.12M | 88×180 | 154/206 (74.76%) | 1.09 ms / — | 700 MiB |
+| 5 | WATERec | R2048 | 26.12M | 128×256 | 153/206 (74.27%) | 1.68 ms / — | 716 MiB |
+| 6 | WATERec | R512 | 26.12M | 64×128 | 149/206 (72.33%) | 0.82 ms / — | 688 MiB |
+| 7 | [PARSeq](https://github.com/algofly-oss/parseq-ocr-training) | Base, price | 23.98M | 64×256 | 148/206 (71.84%) | — | — |
+| 8 | PARSeq | Tiny, native BF16 price | 6.09M | 64×256 | 118/206 (57.28%) | — | — |
+| 9 | PARSeq | Fast Tiny, price | 6.05M | 48×192 | 112/206 (54.37%) | 0.89 / 1.09 ms | 688 MiB |
+
+### License-plate recognition (LPR)
+
+#### LPR development
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | Adapted 512-patch TensorRT, plates | 26.12M | 64×128 dev | 1,075/1,167 (92.12%) | 1.27 / 1.44 ms | 686 MiB |
+| 2 | PP-OCRv6 | Medium height 128, plates | 15.58M | 128×320 bound | 1,027/1,167 (88.00%) | 0.96 / 1.09 ms | 654 MiB |
+| 3 | PP-OCRv6 | Medium height 48, plates | 15.58M | Height 48 | 1,001/1,167 (85.78%) | 0.76 / 0.94 ms | 650 MiB |
+| 4 | [CCT](https://github.com/algofly-oss/cct-ocr-training) | CCT-S, plates | 0.98M | 64×128 | 953/1,167 (81.66%) | 0.85 / 1.03 ms | 542 MiB |
+
+#### LPR validation
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | Adapted 512-patch TensorRT, plates | 26.12M | 64×128 dev | 2,477/2,693 (91.98%) | 1.27 / 1.44 ms | 686 MiB |
+| 2 | WATERec | Speculative TensorRT with orientation correction | 27.76M | ≤512 patches | 2,476/2,693 (91.94%) | — | — |
+| 3 | WATERec | RS, plates | 26.12M | Aspect-preserving, ≤512 patches | 2,475/2,693 (91.90%) | 1.26 / 2.26 ms | 694 MiB |
+| 4 | Florence-2 | Base, optimized TensorRT plates | 231.41M | 224×224 | 2,381/2,693 (88.41%) | — | — |
+| 5 | PARSeq | Fast Tiny, plates | 6.05M | 48×192 | 2,377/2,693 (88.27%) | 0.69 / 1.66 ms | 682 MiB |
+| 6 | [PP-OCRv6](https://github.com/algofly-oss/ppocrv6-ocr-training) | Medium height 128, plates | 15.58M | 128×320 bound | 2,368/2,693 (87.93%) | 0.96 / 1.09 ms | 654 MiB |
+| 7 | [PP-OCRv6](https://github.com/algofly-oss/ppocrv6-ocr-training) | Medium height 48, plates | 15.58M | Height 48 | 2,339/2,693 (86.85%) | 0.76 / 0.94 ms | 650 MiB |
+| 8 | [CCT](https://github.com/algofly-oss/cct-ocr-training) | CCT-S, plates | 0.98M | 64×128 | 2,226/2,693 (82.66%) | 0.85 / 1.03 ms | 542 MiB |
+
+#### Reviewed unseen plates
+
+| Rank | Model family | Variant | Parameters | Input H×W | Exact match | RGB / encoded mean | GPU peak |
+|---:|---|---|---:|---|---:|---:|---:|
+| 1 | WATERec | Speculative TensorRT | 27.51M | ≤512 patches | 879/984 (89.33%) | 1.07 / 2.71 ms | 700 MiB |
+| 2 | WATERec | Speculative TensorRT with orientation correction | 27.76M | ≤512 patches | 878/984 (89.23%) | 1.17 / 2.84 ms | 700 MiB |
+| 3 | Florence-2 | Base, optimized TensorRT plates | 231.41M | 224×224 | 857/984 (87.09%) | 4.88 / 6.56 ms | 1,130 MiB |
+| 4 | [WATERec](https://github.com/algofly-oss/waterec-ocr-training) | Adapted 512-patch TensorRT, plates | 26.12M | 64×128 dev | 855/984 (86.89%) | 1.27 / 1.44 ms | 686 MiB |
+| 5 | WATERec | Rank 128, TensorRT plates | 17.86M | ≤512 patches | 849/984 (86.28%) | 1.18 / 2.82 ms | 696 MiB |
+| 6 | PARSeq | Fast Tiny, plates | 6.05M | 48×192 | 715/984 (72.66%) | 0.69 / 1.66 ms | 682 MiB |
+| 7 | [CCT](https://github.com/algofly-oss/cct-ocr-training) | CCT-S, plates | 0.98M | 64×128 | 628/984 (63.82%) | 0.85 / 1.03 ms | 542 MiB |
+| 8 | PP-OCRv6 | Medium height 48, plates | 15.58M | Height 48 | 626/984 (63.62%) | 0.76 / 0.94 ms | 650 MiB |
+| 9 | PP-OCRv6 | Medium height 128, plates | 15.58M | 128×320 bound | 534/984 (54.27%) | 0.96 / 1.09 ms | 654 MiB |
+
+The optional RGB-array API for speculative WATERec averaged 0.981 ms on the same 984 upright plates, preserving all output strings at 700 MiB. BMP reached 1.050 ms from in-memory bytes with about twice the original PNG payload.
+
+- **Fast recognition on a tight latency budget:** start with PP-OCRv6. Its currency-adapted TensorRT build reached 163/206 in the corrected-crop comparison.
+- **Unseen plate layouts:** start with WATERec. The 512-patch speculative checkpoint reached 879/984 on reviewed unseen crops. With orientation correction it read 880/984 at 90°, 880/984 at 180°, and 881/984 at 270°.
+- **Smallest model:** CCT-S is about 1M parameters. Use it when the input resembles its training distribution.
+- **Custom text selection and ordering:** benchmark Florence-2 on your own annotation policy. Its faster TensorRT path lost two exact matches versus PyTorch on the broader price-tag evaluation.
+
+Timings are batch 1 on an RTX 5090, with preprocessing, recognition and text decoding included. Encoded scope includes image decoding and may include file reads in historical runs. GPU peak is driver-accounted memory. Exact match uses the literal full string. The LPR validation table includes separate WATERec checkpoints identified in the variant column. Compare accuracy within the same label version and split: historical PARSeq price scores use an earlier label policy, and the broader corrected price cohort includes 68 provisional labels. A dash means a comparable result is unavailable. The corrected price timings use the same 206 images for PP-OCRv6, the photo-adapted WATERec profiles, Florence-2 and Fast Tiny. The two original WATERec rows retain development-crop timings. The reviewed unseen plate timings for speculative WATERec, rank-128 WATERec and Florence-2 use the same 984 images. Other timing rows use their original benchmark workloads. The latest Florence values are research measurements; see its repository for the executable versions.
+
+<!-- ocr-family-comparison:end -->
+
+</details>
+
+A standalone, notebook-first workflow for **PARSeq Base, PARSeq Tiny and the custom Fast Tiny recipe**: image/TXT data → training → PyTorch inference → ONNX → TensorRT. The numbered workflow follows [vllm-ocr-training](https://github.com/algofly-oss/florence2-ocr-training). No other checkout is needed to use these PARSeq workflows.
 
 **WATERec is a separate model family and a separate standalone repository.** Use the sibling [`waterec-ocr-training`](https://github.com/algofly-oss/waterec-ocr-training) checkout for WATERec R/RS and its optional speculative decoder. Fast Tiny is PARSeq-derived; it is not a WATERec preset. Existing legacy WATE/PP entrypoints and notebooks 8/9 remain for compatibility, while notebooks **0–7 are the main PARSeq workflow**.
 
 ## Measured reference points first
+
+For the separately trained corrected-policy checkpoints and their current DEV/heldout/backend results, use the maintained [current comparison](https://github.com/algofly-oss/waterec-ocr-training/blob/main/docs/model_comparison.md). In particular, current Florence price 159/206 belongs to a different corrected-policy checkpoint from the historical 148/206 below; neither its accuracy nor timing transfers between checkpoints.
 
 This is also a record of experiments, benchmarks and failures—not just a training product. See [experiment methods/results](docs/experiments.md), the [scenario capability matrix](docs/capabilities.md) and [aggregate evidence metadata](results/scenario_evidence.json). Separate trained checkpoints and cohorts are explicit; dummy-data execution is not accuracy evidence.
 
@@ -18,7 +198,7 @@ This is also a record of experiments, benchmarks and failures—not just a train
 
 NM means unmeasured in the current matched runtime reference. Fast Tiny’s fresh literal replay verifies **2,377/2,693 validation and 715/984 reviewed unseen matches** ([receipt](results/literal_alpr_replay_2026_11_17.json)); the historical timing measurement uses 256 crops and is not a new full-cohort latency measurement. Current accuracy reporting uses literal full-string exact match only. RTX5090 timing includes preprocessing/transfer/OCR/text decoding; encoded adds local file/image decode. Host peaks come from separate functional probes, including libraries and buffers, not minimumRAM. Standard Tiny ALPR is unmeasured. The historical Base ALPR aggregate is not currently certified against unnormalized decoder output. See the linked methods before comparing rows or old snapshots.
 
-The price comparison exposes a limitation: Fast Tiny is fast but has only 112/206 exact matches, versus Florence’s 148/206. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/vllm-ocr-training), [CCT-S](https://github.com/algofly-oss/license-plate-ocr-training).
+The price comparison exposes a limitation: Fast Tiny is fast but has only 112/206 exact matches, versus Florence’s 148/206. Two-line ordering, raised cents, clutter, country/font shifts and rotation must be tested separately; no universal90% or50-shot capability is claimed. Related references: [WATERec](https://github.com/algofly-oss/waterec-ocr-training), [Florence](https://github.com/algofly-oss/florence2-ocr-training), [CCT-S](https://github.com/algofly-oss/cct-ocr-training).
 
 | Option | Starting representation | Decode / training |
 | --- | --- | --- |
@@ -119,7 +299,7 @@ Our final trained WATERec TensorRT plate model scored **91.90% (2475/2693)** on 
 
 On a separate 443-crop Brazil/Europe/US benchmark, the frozen WATERec engine scored **332/443 (74.94%)**, versus the current Florence engine's **191/443 (43.12%)** and an older trained PARSeq model's 327/443. PARSeq remained stronger on the US subset (164/222 versus WATERec's 151/222), so the improvement is not uniform across regions. None of these 443 crops exactly match the ALPR training or primary 984-crop set by RGB content; original public pretraining exposure is unknown.
 
-Price-tag performance needs a separate decision: the trained WATERec price checkpoint read **129/144** clear AI-reviewed numeric values correctly, versus Florence **133/144** and the separately evaluated compact PP-OCR price model **131/144**. WATERec therefore trades price accuracy for speed relative to PP. Its separately evaluated static batch-1 TensorRT price engine matches all 206 native strings and prepared patch arrays: 149/206 exact, 176/206 numeric and 129/144 AI-reviewed numeric. It measured **1.069** ms including file decoding, or **0.822** ms from decoded RGB, at **688** MiB. This price checkpoint uses the original autoregressive reader, not the speculative ALPR draft head. Price evaluation reports exact text and a strict whole-string numeric metric (decimal point/comma, optional `DH` suffix); it never removes a decimal or extracts a convenient numeric substring. Other currency formats require an explicitly defined metric. AI-reviewed labels are not human-certified.
+Price-tag performance needs a separate decision. The historical static-B1 WATERec R512 engine scored149/206 literal exact and matched all 206 native strings and prepared patch arrays. It measured1.069 ms including file decoding /0.822 ms decoded RGB at688 MiB. This is the original autoregressive reader, not the speculative ALPR draft. Different checkpoints, training pools and reference policies must remain separate; every space, symbol and sequence position matters in current literal scoring.
 
 Automatic rotation correction is not enabled by default. The experimental orientation head recovered quarter-turn plate accuracy but slightly reduced upright accuracy. Treat it as a separate pipeline requiring its own validation.
 
@@ -150,6 +330,10 @@ Fresh isolated processes on RTX 5090, the same 256 mixed plate crops, batch 1 an
 
 ## PP-derived price recognition
 
+For current corrected-reference results, use the [maintained comparison and PDF](https://github.com/algofly-oss/waterec-ocr-training/blob/main/docs/model_comparison.md). Current fixed price Florence scores159/206; the historical 148/206 below belongs to different labels/checkpoints and is not overwritten. Current task-specific/native/TRT scopes are reported separately.
+
+A separate opt-in [corrected-price recipe](docs/experiments.md#optional-corrected-price-pp-recipe) is available as `configs/ppocr_price_corrected.yaml` / `--recipe corrected_fixed_bn_v1`: fixed source BN, effective16/micro1,20epochs and literal DEV selection. It **requires your compatible initial checkpoint and SHA256**; neither the measured104 warm start nor its private data is bundled. The default recipe below is unchanged.
+
 [Notebook 9](notebooks/9_ppocr_price.ipynb) covers the custom price reader. This is a PP-OCRv6-medium-derived model with an ASCII output head, recovered batch normalization and an auxiliary reader used only during training. Deployment retains the compact CTC model. It is not an unchanged upstream PP-OCR preset.
 
 ```bash
@@ -163,7 +347,7 @@ python -m parseq_ocr.ppocr_cli infer --config configs/ppocr_price.yaml --runtime
 
 Preparation verifies pinned official assets and converts the Paddle inference model through ONNX into the trainable graph. It requires the extra Paddle/ONNX conversion dependencies; the tested conversion environment is Python 3.10. Training calibrates batch normalization using fit images only, selects epochs on a grouped training holdout, then refits from the same generic initialization. The historical winning recipe selected by exact holdout text; the preset preserves that choice. Blank labels are excluded explicitly. Decimal punctuation, inner spaces and currency text are preserved.
 
-The reference price TensorRT model scored **161/206 exact text**, **187/206 numeric values**, and **131/144 clear AI-reviewed values**, compared with Florence's 133/144 on the reviewed subset. Its measured file-to-text mean was **1.326 ms**, or **1.125 ms from decoded RGB**, at **670 MiB** on RTX5090. Native FP32 and TensorRT predictions can differ, so evaluate the actual engine and batch size you deploy. The managed runtime supports batches 1–32; throughput and single-image latency are different measurements.
+The historical PP price TensorRT model scored161/206 literal exact. It measured1.326 ms file-to-text /1.125 ms decoded RGB at670 MiB on RTX5090. Native and TensorRT predictions can differ; evaluate the actual engine and batch size you deploy. The managed runtime supports batches1–32; throughput and B1 latency are different measurements.
 
 ## Choose Base, Tiny or Fast Tiny
 
@@ -265,42 +449,44 @@ artifacts/parseq_alpr/
 
 For the standard split-graph exporter, parallel decoding adds `parallel.onnx`; refinement is omitted when `refinements: 0`. Encoder and decoder permit FP16, while refinement stays FP32 because TensorRT 10.15 crashed building that graph with FP16 enabled during the reference experiment. Fast Tiny enables TensorRT runtime activation resizing where available and allocates scratch per captured batch shape. A fresh batch-1 instance therefore avoids reserving batch-32 activation memory. Capturing additional batch sizes retains their buffers until `close()`, so measure memory in a fresh process at your deployment batch size. Engines are hardware/runtime-specific. Fast Tiny instead exports a complete single graph, with its own decoder precision constraints and optional CUDA graph replay. The cache checks source hashes and target settings; use `build --force` to deliberately rebuild.
 
-## Model comparison on both tasks
+## Historical model comparison on both tasks
 
-These are task-specific trained checkpoints: a family may use different plate and price weights, resolution, decoder or backend. The 144 clear AI-reviewed price crops are a frozen subset of the 206 external price crops, **not** the 144-image internal training holdout. AI review is not human certification. Plate accuracy uses uppercase text with whitespace removed; price exact retains punctuation and currency after outer whitespace trimming. Price numeric matches the complete value with an optional `DH` suffix and decimal point/comma; malformed or partial values are incorrect.
+These are historical task-specific trained checkpoints: a family may use different plate and price weights, resolution, decoder or backend. Training and selection histories differ; these runs are not retroactively claimed to use today’s literal-only selection policy. Current selection/reporting compares the complete output string without case conversion, trimming, whitespace removal or amount equivalence. The internal144-image development cohort is separate from the206 historical price crops.
 
-| Model family | ALPR validation (2,693) | Reviewed unseen plates (984) | Price exact (206) | Price numeric (206) | Price reviewed numeric (144) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Florence-2 optimized | 2381/2693 (88.41%) | 857/984 (87.09%) | 148/206 (71.84%) | 176/206 (85.44%) | 133/144 (92.36%) |
-| WATERec final (512 patches) | 2475/2693 (91.90%) | 880/984 (89.43%) | 149/206 (72.33%) | 176/206 (85.44%) | 129/144 (89.58%) |
-| PP medium (separate plate/price models) | 2310/2693 (85.78%) | 571/984 (58.03%) | 161/206 (78.16%) | 187/206 (90.78%) | 131/144 (90.97%) |
-| PARSeq Base 64×256 | 2415/2693 (89.68%) | 747/984 (75.91%) | 148/206 (71.84%) | 175/206 (84.95%) | 125/144 (86.81%) |
-| PARSeq Tiny 64×256 | Not measured | Not measured | 118/206 (57.28%) | 146/206 (70.87%) | 98/144 (68.06%) |
-| Fast Tiny 48×192 | Not qualified here;203/256 timing subset | Not qualified here | 112/206 (54.37%) | 135/206 (65.53%) | 88/144 (61.11%) |
-| CCT-S notebook model | 2315/2693 (85.96%) | 644/984 (65.45%) | 100/206 (48.54%) | 123/206 (59.71%) | 78/144 (54.17%) |
-| TrOCR-small (separate task models) | 2350/2693 (87.26%) | 274/984 (27.85%) | 115/206 (55.83%) | 137/206 (66.50%) | 86/144 (59.72%) |
+**Archived comparison, not the current literal-exact leaderboard.** Some legacy ALPR predictions were normalized before persistence; the Base/PP legacy aggregates below are not certified literal-output counts. Historical numbers are retained as reported, not relabeled as fresh exact results. Fast Tiny’s later literal replay is 2377/2693 and 715/984 ([receipt](results/literal_alpr_replay_2026_11_17.json)); its 203/256 entry below describes the older timing subset only.
+
+| Historical model/checkpoint | Legacy ALPR reported count (2,693) | Legacy reviewed reported count (984) | Historical price exact (206) |
+| --- | ---: | ---: | ---: |
+| Florence-2 optimized | 2381/2693 (88.41%) | 857/984 (87.09%) | 148/206 (71.84%) |
+| WATERec final (512 patches) | 2475/2693 (91.90%) | 880/984 (89.43%) | 149/206 (72.33%) |
+| PP medium (separate plate/price models) | 2310/2693 (85.78%) | 571/984 (58.03%) | 161/206 (78.16%) |
+| PARSeq Base 64×256 | 2415/2693 (89.68%) | 747/984 (75.91%) | 148/206 (71.84%) |
+| PARSeq Tiny 64×256 | Not measured | Not measured | 118/206 (57.28%) |
+| Fast Tiny 48×192, archived timing snapshot | Full cohort not qualified in this snapshot;203/256 timing subset | Not qualified in this snapshot; later literal715/984 above | 112/206 (54.37%) |
+| CCT-S notebook model | 2315/2693 (85.96%) | 644/984 (65.45%) | 100/206 (48.54%) |
+| TrOCR-small (separate task models) | 2350/2693 (87.26%) | 274/984 (27.85%) | 115/206 (55.83%) |
 
 Plate results use the evaluated TensorRT checkpoints except TrOCR (native). Price Florence, WATERec, Base, Fast Tiny, PP and CCT-S use TensorRT with separate task-specific checkpoints; standard Tiny uses native BF16 and TrOCR uses its separate native price checkpoint. CCT-S prices use a separate 39-symbol head, not the original plate head. The standard Tiny ALPR cells remain unmeasured because a verified full-cohort result was not available; Fast Tiny is a distinct custom training recipe, not a substitute for that missing result. The 984 reviewed unseen plates and the separate 443 international crops are different cohorts; their counts are never combined.
 
-For these checkpoints, WATERec is the strongest measured plate reader on both primary plate cohorts. PP is the strongest compact price reader by the supplied-label metric, while Florence remains ahead on the clear visual-review subset. Neither result establishes universal dominance across fonts, countries or layouts. WATERec, PARSeq and PP training/export workflows are provided here; Florence, CCT-S and TrOCR are comparison references, not additional trainable presets in this repository.
+For these historical checkpoints, WATERec has the highest listed exact counts on both primary plate cohorts, and PP has the highest listed price exact count. This does not establish universal dominance across fonts, countries or layouts. WATERec, PARSeq and PP workflows are provided here; comparison families are not additional trainable presets.
 
 ### Same 50-label price adaptation (research comparison)
 
-These runs use the **same 50 original price-training images**, seed 15001, 200 optimizer updates and batch 8. All 50 images receive gradients. Results are measured once at the fixed terminal checkpoint on the separate **144-image internal holdout**; this is **not** the AI-reviewed external subset above. Labels and update counts are matched; computation, resolution, objectives and trainable parameter counts are different. This single-seed experiment does not establish a general 50-shot guarantee.
+These runs use the **same 50 original price-training images**, seed 15001, 200 optimizer updates and batch 8. All 50 images receive gradients. Results are measured once at the fixed terminal checkpoint on the separate **144-image internal holdout**; this is **not** a subset of the external206-image cohort. Labels and update counts are matched; computation, resolution, objectives and trainable parameter counts are different. This single-seed experiment does not establish a general 50-shot guarantee.
 
-| Initialization and adaptation | Internal price exact (144) | Whole-string numeric (144) | Trainable parameters | Input / objective |
-| --- | ---: | ---: | ---: | --- |
-| Generic Florence-2 base-ft, decoder only | 92/144 (63.89%) | 119/144 | 57,500,160 | 384×384; native BPE cross-entropy; beam 5 |
-| Provided ALPR-trained Florence-2, decoder only | 98/144 (68.06%) | 112/144 | 57,500,160 | 384×384; native BPE cross-entropy; beam 5 |
-| Generic WATERec R, decoder only | 71/144 (49.31%) | 79/144 | 4,807,680 | Aspect-preserving 512-patch budget; native AR cross-entropy |
-| Generic WATERec R, Q/V LoRA + space rows | 53/144 (36.81%) | 57/144 | 25,344 | Same 512-patch budget and AR objective; rank 8, scale 1 |
-| Generic PP medium + training-only reader auxiliary | 65/144 (45.14%) | 75/144 | 16,253,954 including auxiliary | 128×320; CTC plus training-only auxiliary |
+| Initialization and adaptation | Internal price exact (144) | Trainable parameters | Input / objective |
+| --- | ---: | ---: | --- |
+| Generic Florence-2 base-ft, decoder only | 92/144 (63.89%) | 57,500,160 | 384×384; native BPE cross-entropy; beam 5 |
+| Provided ALPR-trained Florence-2, decoder only | 98/144 (68.06%) | 57,500,160 | 384×384; native BPE cross-entropy; beam 5 |
+| Generic WATERec R, decoder only | 71/144 (49.31%) | 4,807,680 | Aspect-preserving 512-patch budget; native AR cross-entropy |
+| Generic WATERec R, Q/V LoRA + space rows | 53/144 (36.81%) | 25,344 | Same 512-patch budget and AR objective; rank 8, scale 1 |
+| Generic PP medium + training-only reader auxiliary | 65/144 (45.14%) | 16,253,954 including auxiliary | 128×320; CTC plus training-only auxiliary |
 
-The provided Florence initialization already had ALPR training; it is not a generic initialization or evidence of learning ALPR from only 50 labels. These adapted checkpoints have **no measured deployment latency or memory here**. Do not assign them the runtime measurements of the separately trained full-data models below. In particular, the existing full-820-image PP price model remains **161/206 exact, 187/206 numeric**, about **1.125 ms decoded-RGB-to-text / 670 MiB**; the full-820-image WATERec price model remains **149/206 exact / 688 MiB**. Their performance is not a result of these 50-label runs.
+The provided Florence initialization already had ALPR training; it is not a generic initialization or evidence of learning ALPR from only 50 labels. These adapted checkpoints have **no measured deployment latency or memory here**. Do not assign them the runtime measurements of the separately trained full-data models below. In particular, the existing full-820-image PP price model remains **161/206 literal exact**, about **1.125 ms decoded-RGB-to-text / 670 MiB**; the full-820-image WATERec price model remains **149/206 exact / 688 MiB**. Their performance is not a result of these 50-label runs.
 
 Research evidence is distributed separately from this source repository. Paths relative to that evidence bundle are `natural_ocr_pretraining/{florence50_price,wate50_price,wate50_price_lora,ppmedium50_price}/` (protocols, terminal results and independent audits); the comparison PDF is `report/ocr_model_comparison_2026-11-15.pdf`. Private crops, labels and trained checkpoints are not included in this source release.
 
-A separate fresh generic WATERec price refit used all 820 training images and a raw-exact-priority internal selection policy. Its fixed native checkpoint scored **150/206 exact, 176/206 numeric and 128/144 reviewed numeric**, versus the existing model's 149/176/129. With 11 exact wins and 10 losses, and three reviewed-numeric wins and four losses, it was closed without export, timing or promotion. It inherits neither the existing model's 0.823 ms timing nor its 688 MiB footprint; initialization and augmentation differences also prevent a selection-policy-only causal claim. Evidence-bundle path: `natural_ocr_pretraining/intact_wate_layout_pair/full_real_pair/generic_refit/independent_native206_audit.json`.
+A separate fresh generic WATERec price refit used all 820 training images and its original internal selection policy. Its fixed checkpoint scored150/206 literal exact, versus149/206 for the existing model, with11 exact gains and10 losses. It was closed without export, timing or promotion and inherits neither0.823 ms timing nor688 MiB memory. Initialization and augmentation differ, so this is not a selection-policy-only causal comparison. Its historical selection ancestry is not the current exact-only policy.
 
 ### Private exact-order Florence rank optimization
 
@@ -368,9 +554,9 @@ The teacher cache uses about 0.79 MB of host RAM per crop (about 10 GB for 13,00
 
 ### Price model trained with 1024 patch tokens
 
-A separate R1024 price checkpoint trained at the larger patch budget scored **154/206 exact**, **181/206 numeric** and **131/144 AI-reviewed numeric**. Its private TensorRT runtime with exact GPU preprocessing and shared scratch measured **1.340 ms including file decoding**, **1.090 ms from decoded RGB** and **700 MiB**, on 206 crops with five warmups and three repeats. All 206 strings match native and all prepared arrays match the CPU reference.
+A separate historical R1024 price checkpoint scored154/206 literal exact. Its private TensorRT runtime with exact GPU preprocessing/shared scratch measured1.340 ms including file decoding /1.090 ms decoded RGB at700 MiB, on206 crops with five warmups and three repeats. All 206 strings and prepared arrays match its native reference.
 
-This is a trained-resolution research option; the default R512 price row above remains unchanged. Increasing the input budget of the existing 512 checkpoint without matched training did not help on the internal holdout. The public TensorRT export profile currently validates 512 patches; this 1024-patch measurement is not an additional packaged export preset. PP and R1024 tie on the clear AI-reviewed price subset; PP retains higher supplied-label exact/numeric scores and lower process memory, while R512 is faster with two fewer reviewed values correct.
+This is a trained-resolution research option; the historical R512 row remains unchanged. Increasing an existing512 checkpoint’s inference budget without matched training did not help on the internal holdout. The public export profile validates512 patches; this1024 measurement is not an additional packaged export preset. Separate task training and runtime policies prevent a resolution-only causal comparison.
 
 ### Host RAM, measured separately
 

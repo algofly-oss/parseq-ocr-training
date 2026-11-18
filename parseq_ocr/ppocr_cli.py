@@ -20,6 +20,10 @@ def main():
         ],
     )
     p.add_argument("--config", default="configs/ppocr_price.yaml")
+    p.add_argument("--recipe", choices=["legacy", "corrected_fixed_bn_v1", "selection_only_precursor_v1"], default=None,
+                   help="Explicit optional training recipe; config default is unchanged")
+    p.add_argument("--smoke-steps", type=int, choices=[2], default=None,
+                   help="Corrected recipe only: two optimizer updates in a separate smoke folder")
     p.add_argument("--checkpoint")
     p.add_argument("--image")
     p.add_argument("--manifest")
@@ -40,8 +44,12 @@ def main():
     if not 1 <= a.batch_size <= 32:
         p.error("--batch-size must be1..32")
     cfg = load_config(a.config)
+    if a.recipe is not None:
+        cfg["recipe"] = a.recipe
+    if a.smoke_steps is not None and (a.command != "train" or cfg.get("recipe") != "corrected_fixed_bn_v1"):
+        p.error("--smoke-steps applies only to train with corrected_fixed_bn_v1")
     checkpoint = (
-        Path(a.checkpoint) if a.checkpoint else cfg["output_dir"] / "full_fit/model.pt"
+        Path(a.checkpoint) if a.checkpoint else cfg["output_dir"] / ("selection/model.pt" if cfg.get("recipe") == "selection_only_precursor_v1" else "full_fit/model.pt")
     )
     deployment = (
         Path(a.deployment) if a.deployment else cfg["output_dir"] / "deployment"
@@ -51,9 +59,15 @@ def main():
 
         print(prepare_pretrained(cfg["pretrained_dir"]))
     elif a.command == "train":
-        from .ppocr_training import train
-
-        print(train(cfg))
+        if cfg.get("recipe") == "selection_only_precursor_v1":
+            from .ppocr_precursor import train
+            print(json.dumps(train(cfg), indent=2))
+        elif cfg.get("recipe") == "corrected_fixed_bn_v1":
+            from .ppocr_corrected_training import train
+            print(json.dumps(train(cfg, smoke_steps=a.smoke_steps), indent=2))
+        else:
+            from .ppocr_training import train
+            print(train(cfg))
     elif a.command == "export":
         from .ppocr_export import export_onnx
 

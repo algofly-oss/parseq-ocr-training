@@ -1,0 +1,22 @@
+dataset_root: dataset/energy-meter
+output_dir: artifacts/energy_meter
+pretrained_dir: weights/pretrained
+model: parseq-tiny
+image_size:
+- 64
+- 256
+normalization: none
+epochs: 1
+batch_size: 4
+learning_rate: 0.0001
+weight_decay: 0.01
+holdout_fraction: 0.2
+split_seed: 15001
+seed: 15001
+num_workers: 0
+precision: fp32
+device: cpu
+autoregressive: true
+refinements: 1
+refit_all_training: true
+max_label_length: 12
